@@ -8,7 +8,7 @@ edition = "2021"
 [dependencies]
 toml = "0.8.11"
 
-gtk4 = "0.7.3"
+relm4 = "0.7.1"
 gtk4-layer-shell = "0.2.0"
 
 xdg = "2.5.2"
@@ -16,3 +16,4 @@ xdg = "2.5.2"
 clap = {version = "4.5.1", features = ["env", "derive"]}
 tokio = {version="1.36.0", features=["full"]}
 serde = {version="1.0.197", features=["derive"]}
+sharedlib = "7.0.0"

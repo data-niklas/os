@@ -6,8 +6,7 @@ use std::{
 };
 use toml::Value;
 use xdg::BaseDirectories;
-
-const APP_NAME: &str = env!("CARGO_PKG_NAME");
+use crate::APP_NAME;
 
 #[derive(Parser)]
 #[clap(author, version, about)]
@@ -48,20 +47,28 @@ fn default_ui() -> String {
     "gtk".to_string()
 }
 
+fn default_prompt() -> String {
+    "Search".to_string()
+}
+
 #[derive(ClapArgs, Serialize, Deserialize, Debug, Default)]
 pub struct Config {
     /// String argument
-    #[clap(short, long)]
+    #[clap(long)]
     #[serde(default)]
-    plugins: Vec<String>,
+    pub plugins: Vec<String>,
 
     #[clap(short, long, default_value = "gtk")]
     #[serde(default = "default_ui")]
-    ui: String,
+    pub ui: String,
 
     #[clap(skip)]
     #[serde(default)]
-    plugin: HashMap<String, HashMap<String, toml::Value>>,
+    pub plugin: HashMap<String, HashMap<String, toml::Value>>,
+
+    #[clap(short, long, default_value = "Search")]
+    #[serde(default = "default_prompt")]
+    pub prompt: String
 }
 
 impl Config {
