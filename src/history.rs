@@ -19,8 +19,9 @@ impl History {
         let db = Connection::open(data_home).unwrap();
         db.execute(
             "CREATE TABLE IF NOT EXISTS history (
-                id TEXT PRIMARY KEY,
-                timestamp INTEGER NOT NULL
+                id TEXT,
+                timestamp INTEGER,
+                PRIMARY KEY (id, timestamp)
             )",
             [],
         )
