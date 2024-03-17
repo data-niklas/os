@@ -1,15 +1,11 @@
 use crate::history::History;
 use crate::opts::Config;
 use crate::plugin::Plugin;
-use crate::source::{ApplicationsSource, Source, StdinSource};
-use crate::ui::{GtkUI, UI};
+use crate::source::{ApplicationsSource, Source, StdinSource, ZoxideSource};
 use crate::APP_NAME;
 use shlex::{self, Shlex};
+use std::collections::HashMap;
 use std::process::Command;
-use std::{
-    collections::HashMap,
-    path::{Path, PathBuf},
-};
 use xdg::BaseDirectories;
 
 use fuzzy_matcher::{skim::SkimMatcherV2, FuzzyMatcher};
@@ -134,8 +130,9 @@ impl Os {
         let sources: Vec<Box<dyn Source>> = vec![
             Box::new(StdinSource::new()),
             Box::new(ApplicationsSource::new()),
+            Box::new(ZoxideSource::new()),
         ];
-        let mut sources = sources
+        let sources = sources
             .into_iter()
             .map(|s| (s.name().to_string(), s))
             .collect();

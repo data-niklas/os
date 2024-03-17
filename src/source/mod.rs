@@ -8,6 +8,9 @@ pub use stdin::*;
 mod applications;
 pub use applications::*;
 
+mod zoxide;
+pub use zoxide::*;
+
 #[async_trait]
 pub trait Source {
     fn name(&self) -> &'static str;
