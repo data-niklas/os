@@ -22,6 +22,17 @@
               ++ [
                 # parentheses disambiguate each makeOverride call as a single list element
                 (pkgs.rustBuilder.rustLib.makeOverride {
+                  name = "os";
+                  overrideAttrs = drv: {
+                    nativeBuildInputs =
+                      drv.nativeBuildInputs
+                      ++ [
+                        pkgs.sqlite
+                        pkgs.pkg-config
+                      ];
+                  };
+                })
+                (pkgs.rustBuilder.rustLib.makeOverride {
                   name = "gtk4-sys";
                   overrideAttrs = drv: {
                     nativeBuildInputs =

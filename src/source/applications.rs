@@ -72,7 +72,7 @@ impl ApplicationsSource {
 
 #[async_trait]
 impl Source for ApplicationsSource {
-    async fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "applications"
     }
 
@@ -118,11 +118,13 @@ impl Source for ApplicationsSource {
                 let exec = entry.exec.clone();
                 let terminal = entry.terminal.clone();
                 crate::model::SearchItem {
+                    id: "applications".to_string() + &entry.name,
                     title: Some(entry.name.clone()),
                     subtitle: Some(entry.description.clone()),
                     icon: entry.icon.clone(),
                     image: None,
                     score,
+                    source: self.name(),
                     action: Box::new(move || {
                         if terminal {
                             crate::model::SelectAction::RunInTerminal(exec.clone())

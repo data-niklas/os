@@ -16,6 +16,7 @@ pub enum ItemLayer {
 }
 
 pub struct SearchItem {
+    pub id: String,
     pub title: Option<String>,
     pub subtitle: Option<String>,
     pub icon: Option<DynamicImage>,
@@ -23,6 +24,13 @@ pub struct SearchItem {
     pub score: i64,
     pub action: Box<dyn Fn() -> SelectAction>,
     pub layer: ItemLayer,
+    pub source: &'static str,
+}
+
+impl std::hash::Hash for SearchItem {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.id.hash(state);
+    }
 }
 
 impl PartialEq for SearchItem {

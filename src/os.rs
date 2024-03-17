@@ -1,3 +1,4 @@
+use crate::history::History;
 use crate::opts::Config;
 use crate::plugin::Plugin;
 use crate::source::{ApplicationsSource, Source, StdinSource};
@@ -20,6 +21,7 @@ pub struct Os {
     matcher: Box<dyn FuzzyMatcher>,
     sources: HashMap<String, Box<dyn Source>>,
     config: Config,
+    history: History,
 }
 
 impl Os {
@@ -60,8 +62,25 @@ impl Os {
                 let source_results = source.search(query, matcher).await;
                 items.extend(source_results);
             }
-            items.sort_by(|a, b| b.cmp(a));
-            items
+            let mut items_with_history_score = items
+                .into_iter()
+                .map(|item| {
+                    let history_score = self.history.get(&item);
+                    (item, history_score)
+                })
+                .collect::<Vec<_>>();
+            items_with_history_score.sort_by(|a, b| {
+                let cmp = b.1.cmp(&a.1);
+                if cmp == std::cmp::Ordering::Equal {
+                    b.0.cmp(&a.0)
+                } else {
+                    cmp
+                }
+            });
+            items_with_history_score
+                .into_iter()
+                .map(|(item, _)| item)
+                .collect()
         })
     }
 
@@ -72,6 +91,7 @@ impl Os {
                 source.deinit().await;
             }
         });
+        // self.history.deinit();
     }
 
     pub fn run_select_action(&mut self, select_action: crate::model::SelectAction) {
@@ -102,6 +122,7 @@ impl Os {
     }
 
     pub fn select(&mut self, item: &crate::model::SearchItem) {
+        self.history.add(item);
         let select_action = (item.action)();
         self.run_select_action(select_action);
     }
@@ -116,9 +137,10 @@ impl Os {
         ];
         let mut sources = sources
             .into_iter()
-            .map(|s| (runtime.block_on(s.name()).to_string(), s))
+            .map(|s| (s.name().to_string(), s))
             .collect();
         let mut config = Self {
+            history: History::new(),
             plugins,
             runtime,
             matcher,

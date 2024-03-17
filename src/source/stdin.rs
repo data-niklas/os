@@ -17,7 +17,7 @@ impl StdinSource {
 
 #[async_trait]
 impl Source for StdinSource {
-    async fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "stdin"
     }
 
@@ -46,11 +46,13 @@ impl Source for StdinSource {
             .map(|(s, score)| {
                 let text = s.clone();
                 SearchItem {
+                    id: "stdin".to_string() + &text,
                     title: Some(s.clone()),
                     subtitle: None,
                     icon: None,
                     image: None,
                     score,
+                    source: self.name(),
                     action: Box::new(move || {
                         let text = text.clone();
                         SelectAction::Print(text)
