@@ -8,7 +8,7 @@ use gtk::prelude::*;
 use gtk::{Application, ApplicationWindow, Button, Entry, SearchEntry};
 use gtk4_layer_shell::{Edge, Layer, LayerShell};
 use relm4::gtk::cairo::FontOptions;
-use relm4::gtk::ffi::GtkBox;
+use relm4::gtk::ffi::{GtkBox, GtkImage};
 use relm4::gtk::gdk::Key;
 use relm4::gtk::glib::Propagation;
 use relm4::gtk::pango::ffi::{PangoAttrFontDesc, PangoFontDescription};
@@ -57,7 +57,7 @@ impl RelmListItem for SearchItem {
     type Widgets = SearchItemWidgets;
 
     fn bind(&mut self, widgets: &mut Self::Widgets, root: &mut Self::Root) {
-        widgets.icon.set_visible(self.icon.is_some());
+        // widgets.icon.set_visible(self.icon.is_some());
         widgets.title.set_visible(self.title.is_some());
         widgets.image.set_visible(self.image.is_some());
         widgets.subtitle.set_visible(self.subtitle.is_some());
@@ -69,11 +69,22 @@ impl RelmListItem for SearchItem {
             widgets.subtitle.set_label(subtitle);
         }
 
-        // if self.icon.is_some() {
-        //     let image = self.icon.unwrap();
-        //     let pixbuf = Pixbuf::from_bytes();
-        //     widgets.icon.set_from_pixbuf(Some(pixbuf));
-        // }
+        if self.icon.is_some() {
+            let image = self.icon.as_ref().unwrap();
+            let rgb8_image = image.to_rgba8();
+            let (width, height) = rgb8_image.dimensions();
+            // Convert DynamicImage to Pixbuf
+            let pixbuf = Pixbuf::from_mut_slice(
+                rgb8_image.into_raw(),
+                gtk::gdk_pixbuf::Colorspace::Rgb,
+                true, // Has alpha channel
+                8,    // Bits per sample
+                width as i32,
+                height as i32,
+                width as i32 * 4, // Row stride (4 bytes per pixel)
+            );
+            widgets.icon.set_from_pixbuf(Some(&pixbuf));
+        }
     }
 
     fn setup(list_item: &gtk::ListItem) -> (Self::Root, Self::Widgets) {
@@ -87,6 +98,9 @@ impl RelmListItem for SearchItem {
                 set_halign: Align::Start,
                 #[name="icon"]
                 gtk::Image {
+                    set_vexpand: true,
+                    set_icon_size: gtk::IconSize::Large,
+                    set_margin_end: 6,
                 },
                 gtk::Box {
                     set_orientation: gtk::Orientation::Vertical,
@@ -157,10 +171,10 @@ impl SimpleComponent for GtkApp {
 
     view! {
         gtk::Window {
-            // init_layer_shell: (),
-            // set_keyboard_mode: gtk4_layer_shell::KeyboardMode::OnDemand,
-            // set_layer: Layer::Overlay,
-            // auto_exclusive_zone_enable: (),
+            init_layer_shell: (),
+            set_keyboard_mode: gtk4_layer_shell::KeyboardMode::OnDemand,
+            set_layer: Layer::Overlay,
+            auto_exclusive_zone_enable: (),
 
             set_default_size: (400, 400),
             gtk::Box {
@@ -224,7 +238,7 @@ impl SimpleComponent for GtkApp {
         let (os, prompt) = init;
         let os_for_key_pressed = os.clone();
         let search_items: TypedListView<SearchItem, gtk::SingleSelection> =
-            TypedListView::with_sorting();
+            TypedListView::new();
         let search_items_box = &search_items.view;
         let widgets = view_output!();
         let search_entry = widgets.search_entry.clone();

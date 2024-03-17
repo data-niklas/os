@@ -19,10 +19,11 @@ pub struct Os {
     runtime: Runtime,
     matcher: Box<dyn FuzzyMatcher>,
     sources: HashMap<String, Box<dyn Source>>,
+    config: Config,
 }
 
 impl Os {
-    fn load_plugins(plugin_config: HashMap<String, HashMap<String, toml::Value>>) -> Vec<Plugin> {
+    fn load_plugins(plugin_config: &HashMap<String, HashMap<String, toml::Value>>) -> Vec<Plugin> {
         let xdg_dirs = BaseDirectories::with_prefix(APP_NAME).unwrap();
         xdg_dirs
             .get_config_dirs()
@@ -59,6 +60,7 @@ impl Os {
                 let source_results = source.search(query, matcher).await;
                 items.extend(source_results);
             }
+            items.sort_by(|a, b| b.cmp(a));
             items
         })
     }
@@ -84,7 +86,8 @@ impl Os {
                 command.spawn().expect("Failed to spawn command");
             }
             crate::model::SelectAction::RunInTerminal(action) => {
-                let terminal_command = std::env::var("TERMINAL").unwrap_or("xterm".to_string());
+                let terminal_command = &self.config.terminal;
+
                 let mut command = Command::new(terminal_command);
                 command.arg("-e").arg(action);
                 command.spawn().expect("Failed to spawn command");
@@ -104,7 +107,7 @@ impl Os {
     }
 
     pub fn new(config: Config) -> Self {
-        let plugins = Os::load_plugins(config.plugin);
+        let plugins = Os::load_plugins(&config.plugin);
         let runtime = Runtime::new().expect("Failed to create Tokio runtime");
         let matcher = Box::new(SkimMatcherV2::default());
         let sources: Vec<Box<dyn Source>> = vec![
@@ -120,6 +123,7 @@ impl Os {
             runtime,
             matcher,
             sources,
+            config,
         };
         config.wrap_init_sources();
         config

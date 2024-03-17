@@ -1,4 +1,8 @@
-use std::{borrow::Cow, fs};
+use std::{
+    borrow::Cow,
+    fs,
+    path::{Path, PathBuf},
+};
 
 use async_trait::async_trait;
 use freedesktop_desktop_entry::{default_paths, DesktopEntry, Iter, PathSource};
@@ -16,17 +20,35 @@ pub struct ParsedDesktopEntry {
 }
 
 impl ParsedDesktopEntry {
-    pub fn from_desktop_entry(entry: DesktopEntry) -> Option<Self> {
+    fn lookup_icon(icon: &str, cache: &Cache) -> Option<PathBuf> {
+        let path = Path::new(icon);
+        if path.exists() {
+            return Some(path.to_path_buf());
+        }
+        cache.lookup(icon, None)
+    }
+
+    pub fn from_desktop_entry(entry: DesktopEntry, cache: &Cache) -> Option<Self> {
         if entry.exec().is_none() {
             return None;
         }
-        let name = entry.name(None).unwrap_or(Cow::Borrowed("")).trim().to_string();
-        let description = entry.comment(None).unwrap_or(Cow::Borrowed("")).trim().to_string();
+        let name = entry
+            .name(None)
+            .unwrap_or(Cow::Borrowed(""))
+            .trim()
+            .to_string();
+        let description = entry
+            .comment(None)
+            .unwrap_or(Cow::Borrowed(""))
+            .trim()
+            .to_string();
         let exec = entry.exec().unwrap().to_string();
         let icon = entry
             .icon()
-            .and_then(|icon| Cache::new().unwrap().lookup(icon, None))
-            .map(|icon_path| image::open(icon_path).unwrap());
+            .and_then(|icon| Self::lookup_icon(&icon, cache))
+            .map(|icon_path| icon_path)
+            .map(|icon_path| image::open(icon_path).ok())
+            .unwrap_or(None);
         let terminal = entry.terminal();
         Some(ParsedDesktopEntry {
             name,
@@ -55,7 +77,10 @@ impl Source for ApplicationsSource {
     }
 
     async fn init(&mut self) {
-        let cache = Cache::new().unwrap();
+        let mut cache = Cache::new().unwrap();
+        cache
+            .load_default()
+            .expect("Failed to load default icon cache");
         let paths = default_paths();
         let parsed_entries: Vec<ParsedDesktopEntry> = Iter::new(paths)
             .into_iter()
@@ -67,7 +92,7 @@ impl Source for ApplicationsSource {
                         return None;
                     }
                     let entry = entry.unwrap();
-                    ParsedDesktopEntry::from_desktop_entry(entry)
+                    ParsedDesktopEntry::from_desktop_entry(entry, &cache)
                 } else {
                     None
                 }

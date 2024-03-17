@@ -12,7 +12,7 @@ use crate::APP_NAME;
 #[clap(author, version, about)]
 pub struct Args {
     /// Input files
-    input: Vec<std::path::PathBuf>,
+    // input: Vec<std::path::PathBuf>,
 
     /// Config file
     #[clap(short, long = "config", env)]
@@ -51,6 +51,10 @@ fn default_prompt() -> String {
     "Search".to_string()
 }
 
+fn default_terminal() -> String {
+    "xterm".to_string()
+}
+
 #[derive(ClapArgs, Serialize, Deserialize, Debug, Default)]
 pub struct Config {
     /// String argument
@@ -68,7 +72,11 @@ pub struct Config {
 
     #[clap(short, long, default_value = "Search")]
     #[serde(default = "default_prompt")]
-    pub prompt: String
+    pub prompt: String,
+
+    #[clap(short, long, default_value = "xterm")]
+    #[serde(default = "default_terminal")]
+    pub terminal: String,
 }
 
 impl Config {

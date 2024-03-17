@@ -3,6 +3,7 @@ use crate::source::{stdin, Source};
 use async_trait::async_trait;
 use fuzzy_matcher::FuzzyMatcher;
 use std::io::{stdin, Read};
+use atty;
 
 pub struct StdinSource {
     items: Vec<String>,
@@ -21,6 +22,9 @@ impl Source for StdinSource {
     }
 
     async fn init(&mut self) {
+        if atty::is(atty::Stream::Stdin) {
+            return;
+        }
         let mut buf = String::new();
         stdin()
             .lock()
