@@ -1,21 +1,28 @@
 use crate::opts::Config;
 use crate::plugin::Plugin;
+use crate::source::{ApplicationsSource, Source, StdinSource};
+use crate::ui::{GtkUI, UI};
 use crate::APP_NAME;
+use shlex::{self, Shlex};
+use std::process::Command;
 use std::{
     collections::HashMap,
     path::{Path, PathBuf},
 };
-use crate::ui::{GtkUI, UI};
 use xdg::BaseDirectories;
+
+use fuzzy_matcher::{skim::SkimMatcherV2, FuzzyMatcher};
+use tokio::runtime::Runtime;
 
 pub struct Os {
     plugins: Vec<Plugin>,
+    runtime: Runtime,
+    matcher: Box<dyn FuzzyMatcher>,
+    sources: HashMap<String, Box<dyn Source>>,
 }
 
 impl Os {
-    fn load_plugins(
-        plugin_config: HashMap<String, HashMap<String, toml::Value>>,
-    ) -> Vec<Plugin> {
+    fn load_plugins(plugin_config: HashMap<String, HashMap<String, toml::Value>>) -> Vec<Plugin> {
         let xdg_dirs = BaseDirectories::with_prefix(APP_NAME).unwrap();
         xdg_dirs
             .get_config_dirs()
@@ -28,12 +35,93 @@ impl Os {
                     vec![]
                 }
             })
-            .flatten().collect()
+            .flatten()
+            .collect()
     }
 
+    async fn init_sources(sources: &mut HashMap<String, Box<dyn Source>>) {
+        for (_, source) in sources.iter_mut() {
+            source.init().await;
+        }
+    }
+
+    fn wrap_init_sources(&mut self) {
+        let sources = &mut self.sources;
+        self.runtime.block_on(Os::init_sources(sources));
+    }
+
+    pub fn search(&self, query: &str) -> Vec<crate::model::SearchItem> {
+        let sources = &self.sources;
+        let matcher = &self.matcher;
+        self.runtime.block_on(async {
+            let mut items = vec![];
+            for (_, source) in sources.iter() {
+                let source_results = source.search(query, matcher).await;
+                items.extend(source_results);
+            }
+            items
+        })
+    }
+
+    pub fn deinit(&mut self) {
+        let sources = &mut self.sources;
+        self.runtime.block_on(async {
+            for (_, source) in sources.iter_mut() {
+                source.deinit().await;
+            }
+        });
+    }
+
+    pub fn run_select_action(&mut self, select_action: crate::model::SelectAction) {
+        match select_action {
+            crate::model::SelectAction::Print(text) => {
+                println!("{}", text);
+            }
+            crate::model::SelectAction::Run(action) => {
+                let args: Vec<_> = Shlex::new(&action).into_iter().collect();
+                let mut command = Command::new(&args[0]);
+                command.args(&args[1..]);
+                command.spawn().expect("Failed to spawn command");
+            }
+            crate::model::SelectAction::RunInTerminal(action) => {
+                let terminal_command = std::env::var("TERMINAL").unwrap_or("xterm".to_string());
+                let mut command = Command::new(terminal_command);
+                command.arg("-e").arg(action);
+                command.spawn().expect("Failed to spawn command");
+            }
+            crate::model::SelectAction::Exit => {}
+            crate::model::SelectAction::Noop => {
+                return;
+            }
+        };
+        self.deinit();
+        std::process::exit(0);
+    }
+
+    pub fn select(&mut self, item: &crate::model::SearchItem) {
+        let select_action = (item.action)();
+        self.run_select_action(select_action);
+    }
 
     pub fn new(config: Config) -> Self {
         let plugins = Os::load_plugins(config.plugin);
-        Self { plugins }
+        let runtime = Runtime::new().expect("Failed to create Tokio runtime");
+        let matcher = Box::new(SkimMatcherV2::default());
+        let sources: Vec<Box<dyn Source>> = vec![
+            Box::new(StdinSource::new()),
+            Box::new(ApplicationsSource::new()),
+        ];
+        let mut sources = sources
+            .into_iter()
+            .map(|s| (runtime.block_on(s.name()).to_string(), s))
+            .collect();
+        let mut config = Self {
+            plugins,
+            runtime,
+            matcher,
+            sources,
+        };
+        config.wrap_init_sources();
+        config
     }
 }
