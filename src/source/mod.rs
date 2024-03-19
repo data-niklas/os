@@ -11,6 +11,9 @@ pub use applications::*;
 mod zoxide;
 pub use zoxide::*;
 
+mod hstr;
+pub use hstr::*;
+
 #[async_trait]
 pub trait Source {
     fn name(&self) -> &'static str;

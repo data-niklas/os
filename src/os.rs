@@ -1,7 +1,7 @@
 use crate::history::History;
 use crate::opts::Config;
 use crate::plugin::Plugin;
-use crate::source::{ApplicationsSource, Source, StdinSource, ZoxideSource};
+use crate::source::{ApplicationsSource, HstrSource, Source, StdinSource, ZoxideSource};
 use crate::APP_NAME;
 use shlex::{self, Shlex};
 use std::collections::HashMap;
@@ -131,6 +131,7 @@ impl Os {
             Box::new(StdinSource::new()),
             Box::new(ApplicationsSource::new()),
             Box::new(ZoxideSource::new()),
+            Box::new(HstrSource::new()),
         ];
         let sources = sources
             .into_iter()

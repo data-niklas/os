@@ -126,10 +126,16 @@ impl Source for ApplicationsSource {
                     score,
                     source: self.name(),
                     action: Box::new(move || {
+                        let exec = exec.clone();
+                        let exec = exec
+                            .replace(" %U", "")
+                            .replace(" %u", "")
+                            .replace(" %F", "")
+                            .replace(" %f", "");
                         if terminal {
-                            crate::model::SelectAction::RunInTerminal(exec.clone())
+                            crate::model::SelectAction::RunInTerminal(exec)
                         } else {
-                            crate::model::SelectAction::Run(exec.clone())
+                            crate::model::SelectAction::Run(exec)
                         }
                     }),
                     layer: crate::model::ItemLayer::Middle,
