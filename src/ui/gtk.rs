@@ -6,12 +6,12 @@ use crate::ui::UI;
 use crate::APPLICATION_ID;
 use gtk::prelude::*;
 use gtk::{Application, ApplicationWindow, Button, Entry, SearchEntry};
-use relm4::gtk::gdk_pixbuf::{Colorspace, PixbufLoader};
 use gtk4_layer_shell::{Edge, Layer, LayerShell};
 use relm4::gtk::cairo::FontOptions;
 use relm4::gtk::ffi::{GtkBox, GtkImage};
 use relm4::gtk::gdk::ffi::GdkMemoryTexture;
 use relm4::gtk::gdk::Key;
+use relm4::gtk::gdk_pixbuf::{Colorspace, PixbufLoader};
 use relm4::gtk::glib::translate::FromGlibPtrFull;
 use relm4::gtk::glib::Propagation;
 use relm4::gtk::pango::ffi::{PangoAttrFontDesc, PangoFontDescription};
@@ -196,6 +196,7 @@ impl SimpleComponent for GtkApp {
                     },
                     connect_activate => Msg::Select,
                     add_controller: {
+                        let sender2 = sender.clone();
                         let keys = EventControllerKey::new();
                         keys.connect_key_pressed(move |_, keyval, keycode, state| {
                             match keyval {
@@ -204,11 +205,11 @@ impl SimpleComponent for GtkApp {
                                     Propagation::Stop
                                 },
                                 Key::Up => {
-                                    sender.input(Msg::Up);
+                                    sender2.input(Msg::Up);
                                     Propagation::Stop
                                 },
                                 Key::Down => {
-                                    sender.input(Msg::Down);
+                                    sender2.input(Msg::Down);
                                     Propagation::Stop
                                 },
                                 _ => Propagation::Proceed,
@@ -225,9 +226,9 @@ impl SimpleComponent for GtkApp {
                     set_vexpand: true,
                     #[local_ref]
                     search_items_box -> gtk::ListView{
-                        // set_vexpand: false,
-                        // set_orientation: gtk::Orientation::Vertical,
-                        // set_vscroll_policy: gtk::ScrollablePolicy::Natural,
+                        connect_activate[sender] => move|_a,_b|{
+                            sender.input(Msg::Select);
+                        },
                     }
                 }
             }
