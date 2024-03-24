@@ -1,5 +1,6 @@
 use crate::model::SearchItem;
 use fuzzy_matcher::FuzzyMatcher;
+use std::collections::HashMap;
 
 mod stdin;
 pub use stdin::*;
@@ -18,7 +19,8 @@ pub use cliphist::*;
 
 pub trait Source {
     fn name(&self) -> &'static str;
-    fn init(&mut self);
+    fn init(&mut self, config: &toml::Table);
     fn deinit(&mut self);
-    fn search(&self, query: &str, matcher: &Box<dyn FuzzyMatcher + Send + Sync>) -> Vec<SearchItem>;
+    fn search(&self, query: &str, matcher: &Box<dyn FuzzyMatcher + Send + Sync>)
+        -> Vec<SearchItem>;
 }

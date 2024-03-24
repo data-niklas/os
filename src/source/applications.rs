@@ -1,16 +1,30 @@
+use super::Source;
+use crate::model::ImmutablePixbuf;
+use freedesktop_desktop_entry::{default_paths, DesktopEntry, Iter, PathSource};
+use freedesktop_icon_lookup::Cache;
+use rayon::prelude::*;
+use relm4::gtk::gdk_pixbuf::Pixbuf;
+use serde::de::value::MapDeserializer;
+use std::collections::HashMap;
 use std::{
     borrow::Cow,
     fs,
     path::{Path, PathBuf},
 };
 
-use crate::model::ImmutablePixbuf;
-use freedesktop_desktop_entry::{default_paths, DesktopEntry, Iter, PathSource};
-use freedesktop_icon_lookup::Cache;
-use relm4::gtk::gdk_pixbuf::Pixbuf;
-use rayon::prelude::*;
-use super::Source;
+use serde::Deserialize;
 
+const fn _default_icons() -> bool {
+    true
+}
+
+#[derive(Deserialize)]
+pub struct ApplicationsConfig {
+    #[serde(default = "_default_icons")]
+    pub icons: bool,
+}
+
+#[derive(Clone)]
 pub struct ParsedDesktopEntry {
     pub name: String,
     pub description: String,
@@ -28,7 +42,7 @@ impl ParsedDesktopEntry {
         cache.lookup(icon, None)
     }
 
-    pub fn from_desktop_entry(entry: DesktopEntry, cache: &Cache) -> Option<Self> {
+    pub fn from_desktop_entry(entry: DesktopEntry, cache: &Cache, icons: bool) -> Option<Self> {
         if entry.exec().is_none() {
             return None;
         }
@@ -43,12 +57,16 @@ impl ParsedDesktopEntry {
             .trim()
             .to_string();
         let exec = entry.exec().unwrap().to_string();
-        let icon = entry
-            .icon()
-            .and_then(|icon| Self::lookup_icon(&icon, cache))
-            .map(|icon_path| icon_path)
-            .map(|icon_path| Pixbuf::from_file(icon_path).map(ImmutablePixbuf::new).ok())
-            .unwrap_or(None);
+        let icon = if icons {
+            entry
+                .icon()
+                .and_then(|icon| Self::lookup_icon(&icon, cache))
+                .map(|icon_path| icon_path)
+                .map(|icon_path| Pixbuf::from_file(icon_path).map(ImmutablePixbuf::new).ok())
+                .unwrap_or(None)
+        } else {
+            None
+        };
         let terminal = entry.terminal();
         Some(ParsedDesktopEntry {
             name,
@@ -75,7 +93,8 @@ impl Source for ApplicationsSource {
         "applications"
     }
 
-    fn init(&mut self) {
+    fn init(&mut self, config: &toml::Table) {
+        let config: ApplicationsConfig = config.clone().try_into().unwrap();
         let mut cache = Cache::new().unwrap();
         cache
             .load_default()
@@ -91,7 +110,7 @@ impl Source for ApplicationsSource {
                         return None;
                     }
                     let entry = entry.unwrap();
-                    ParsedDesktopEntry::from_desktop_entry(entry, &cache)
+                    ParsedDesktopEntry::from_desktop_entry(entry, &cache, config.icons)
                 } else {
                     None
                 }

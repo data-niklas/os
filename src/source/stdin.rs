@@ -3,6 +3,7 @@ use crate::source::{stdin, Source};
 use atty;
 use fuzzy_matcher::FuzzyMatcher;
 use std::io::{stdin, Read};
+use std::collections::HashMap;
 
 pub struct StdinSource {
     items: Vec<String>,
@@ -19,7 +20,7 @@ impl Source for StdinSource {
         "stdin"
     }
 
-    fn init(&mut self) {
+    fn init(&mut self, config: &toml::Table) {
         if atty::is(atty::Stream::Stdin) {
             return;
         }

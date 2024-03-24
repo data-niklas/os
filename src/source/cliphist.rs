@@ -13,6 +13,7 @@ use std::io::Cursor;
 use std::path::PathBuf;
 use std::process::Command;
 use xdg::BaseDirectories;
+use std::collections::HashMap;
 
 pub struct CliphistSource {
     items: Vec<(Option<String>, Option<ImmutablePixbuf>, u64)>,
@@ -72,7 +73,7 @@ impl Source for CliphistSource {
         "cliphist"
     }
 
-    fn init(&mut self) {
+    fn init(&mut self, config: &toml::Table) {
         let xdg = BaseDirectories::with_prefix("cliphist").unwrap();
         let db_path = xdg.place_cache_file("db").unwrap();
         let seed = 42;

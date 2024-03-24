@@ -2,6 +2,7 @@ use crate::model::{SearchItem, SelectAction};
 use crate::source::Source;
 use fuzzy_matcher::FuzzyMatcher;
 use std::process::Command;
+use std::collections::HashMap;
 
 pub struct ZoxideSource {}
 
@@ -16,7 +17,7 @@ impl Source for ZoxideSource {
         "zoxide"
     }
 
-    fn init(&mut self) {}
+    fn init(&mut self, config: &toml::Table) {}
 
     fn deinit(&mut self) {}
 

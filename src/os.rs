@@ -42,14 +42,18 @@ impl Os {
     }
 
     fn init_sources(sources: &mut HashMap<String, Box<dyn Source + Send + Sync>>) {
-        sources.par_iter_mut().for_each(|(_, source)| {
-            source.init();
-        });
     }
 
     fn wrap_init_sources(&mut self) {
-        let sources = &mut self.sources;
-        Os::init_sources(sources);
+        self.sources.par_iter_mut().for_each(|(_, source)| {
+            let source_name = source.name();
+            if let Some(config) = self.config.source.get(source_name) {
+                source.init(config);
+            }
+            else {
+                source.init(&toml::Table::new());
+            }
+        });
     }
 
     pub fn search(&self, query: &str) -> Vec<crate::model::SearchItem> {

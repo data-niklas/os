@@ -59,7 +59,7 @@ pub struct Config {
 
     #[serde(default)]
     #[clap(skip)]
-    pub source: HashMap<String, HashMap<String, toml::Value>>,
+    pub source: HashMap<String, toml::Table>,
 
     #[default(vec!["stdin".to_string()])]
     #[clap(short, long, env)]

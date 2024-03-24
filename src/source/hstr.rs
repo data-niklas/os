@@ -1,7 +1,9 @@
 use crate::model::{SearchItem, SelectAction};
 use crate::source::Source;
 use fuzzy_matcher::FuzzyMatcher;
+use toml::Table;
 use std::process::Command;
+use std::collections::HashMap;
 
 pub struct HstrSource {}
 
@@ -16,7 +18,7 @@ impl Source for HstrSource {
         "hstr"
     }
 
-    fn init(&mut self) {}
+    fn init(&mut self, config: &toml::Table) {}
     fn deinit(&mut self) {}
 
     fn search(
