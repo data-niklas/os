@@ -1,9 +1,8 @@
 use crate::model::{SearchItem, SelectAction};
 use crate::source::{stdin, Source};
-use async_trait::async_trait;
+use atty;
 use fuzzy_matcher::FuzzyMatcher;
 use std::io::{stdin, Read};
-use atty;
 
 pub struct StdinSource {
     items: Vec<String>,
@@ -15,13 +14,12 @@ impl StdinSource {
     }
 }
 
-#[async_trait]
 impl Source for StdinSource {
     fn name(&self) -> &'static str {
         "stdin"
     }
 
-    async fn init(&mut self) {
+    fn init(&mut self) {
         if atty::is(atty::Stream::Stdin) {
             return;
         }
@@ -33,15 +31,16 @@ impl Source for StdinSource {
         self.items = buf.lines().map(|s| s.to_string()).collect();
     }
 
-    async fn deinit(&mut self) {
-    }
+    fn deinit(&mut self) {}
 
-    async fn search(&self, query: &str, matcher: &Box<dyn FuzzyMatcher>) -> Vec<SearchItem> {
+    fn search(
+        &self,
+        query: &str,
+        matcher: &Box<dyn FuzzyMatcher + Send + Sync>,
+    ) -> Vec<SearchItem> {
         self.items
             .iter()
-            .map(|s|{
-                (s, matcher.fuzzy_match(&s, query).unwrap_or(0))
-            })
+            .map(|s| (s, matcher.fuzzy_match(&s, query).unwrap_or(0)))
             .filter(|(_, score)| *score > 0 || query.is_empty())
             .map(|(s, score)| {
                 let text = s.clone();

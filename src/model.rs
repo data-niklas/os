@@ -1,4 +1,46 @@
-use image::DynamicImage;
+use relm4::gtk::gdk_pixbuf::Pixbuf;
+
+pub enum ClipboardContent {
+    Text(String),
+    Image(ImmutablePixbuf),
+}
+
+pub struct ImmutablePixbuf(Pixbuf);
+impl ImmutablePixbuf {
+    pub fn new(pixbuf: Pixbuf) -> Self {
+        ImmutablePixbuf(pixbuf)
+    }
+
+    pub fn borrow(&self) -> &Pixbuf {
+        &self.0
+    }
+}
+impl Clone for ImmutablePixbuf {
+    fn clone(&self) -> Self {
+        ImmutablePixbuf(self.0.clone())
+    }
+}
+impl PartialEq for ImmutablePixbuf {
+    fn eq(&self, other: &Self) -> bool {
+        self.0 == other.0
+    }
+}
+
+unsafe impl Send for ImmutablePixbuf {}
+unsafe impl Sync for ImmutablePixbuf {}
+
+impl ClipboardContent {
+    pub fn into_boxed_slice(self) -> Box<[u8]> {
+        match self {
+            ClipboardContent::Text(text) => text.into_bytes().into_boxed_slice(),
+            ClipboardContent::Image(image) => image
+                .borrow()
+                .read_pixel_bytes()
+                .to_vec()
+                .into_boxed_slice(),
+        }
+    }
+}
 
 pub enum SelectAction {
     Noop,
@@ -6,6 +48,7 @@ pub enum SelectAction {
     Print(String),
     Run(String),
     RunInTerminal(String),
+    CopyToClipboard(ClipboardContent),
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
@@ -19,10 +62,10 @@ pub struct SearchItem {
     pub id: String,
     pub title: Option<String>,
     pub subtitle: Option<String>,
-    pub icon: Option<DynamicImage>,
-    pub image: Option<DynamicImage>,
+    pub icon: Option<ImmutablePixbuf>,
+    pub image: Option<ImmutablePixbuf>,
     pub score: i64,
-    pub action: Box<dyn Fn() -> SelectAction>,
+    pub action: Box<dyn Fn() -> SelectAction + Send + Sync>,
     pub layer: ItemLayer,
     pub source: &'static str,
 }

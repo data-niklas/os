@@ -1,6 +1,5 @@
 use crate::model::{SearchItem, SelectAction};
 use crate::source::Source;
-use async_trait::async_trait;
 use fuzzy_matcher::FuzzyMatcher;
 use std::process::Command;
 
@@ -12,17 +11,20 @@ impl ZoxideSource {
     }
 }
 
-#[async_trait]
 impl Source for ZoxideSource {
     fn name(&self) -> &'static str {
         "zoxide"
     }
 
-    async fn init(&mut self) {}
+    fn init(&mut self) {}
 
-    async fn deinit(&mut self) {}
+    fn deinit(&mut self) {}
 
-    async fn search(&self, query: &str, _matcher: &Box<dyn FuzzyMatcher>) -> Vec<SearchItem> {
+    fn search(
+        &self,
+        query: &str,
+        _matcher: &Box<dyn FuzzyMatcher + Send + Sync>,
+    ) -> Vec<SearchItem> {
         let output = Command::new("zoxide")
             .arg("query")
             .arg("-ls")
@@ -32,13 +34,14 @@ impl Source for ZoxideSource {
         let stdout = String::from_utf8(output.stdout).unwrap();
         stdout
             .lines()
-            .map(|line|{
+            .map(|line| {
                 let (score, directory) = line.trim().split_once(' ').unwrap();
-                (score.parse::<f32>().unwrap().floor() as i64, directory.to_string())
+                (
+                    score.parse::<f32>().unwrap().floor() as i64,
+                    directory.to_string(),
+                )
             })
-            .filter(|(score, _)| {
-                score > &0
-            })
+            .filter(|(score, _)| score > &0)
             .map(|(score, directory)| {
                 let action_directory = directory.clone();
                 SearchItem {
@@ -51,7 +54,8 @@ impl Source for ZoxideSource {
                     source: self.name(),
                     action: Box::new(move || {
                         let shell = std::env::var("SHELL").unwrap_or("bash".to_string());
-                        let command = format!("{} -c 'cd \"{}\";exec $SHELL;'", shell, action_directory);
+                        let command =
+                            format!("{} -c 'cd \"{}\";exec $SHELL;'", shell, action_directory);
                         SelectAction::RunInTerminal(command)
                     }),
                     layer: crate::model::ItemLayer::Middle,

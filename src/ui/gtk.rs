@@ -6,10 +6,13 @@ use crate::ui::UI;
 use crate::APPLICATION_ID;
 use gtk::prelude::*;
 use gtk::{Application, ApplicationWindow, Button, Entry, SearchEntry};
+use relm4::gtk::gdk_pixbuf::{Colorspace, PixbufLoader};
 use gtk4_layer_shell::{Edge, Layer, LayerShell};
 use relm4::gtk::cairo::FontOptions;
 use relm4::gtk::ffi::{GtkBox, GtkImage};
+use relm4::gtk::gdk::ffi::GdkMemoryTexture;
 use relm4::gtk::gdk::Key;
+use relm4::gtk::glib::translate::FromGlibPtrFull;
 use relm4::gtk::glib::Propagation;
 use relm4::gtk::pango::ffi::{PangoAttrFontDesc, PangoFontDescription};
 use relm4::gtk::pango::FontScale;
@@ -57,33 +60,26 @@ impl RelmListItem for SearchItem {
     type Widgets = SearchItemWidgets;
 
     fn bind(&mut self, widgets: &mut Self::Widgets, root: &mut Self::Root) {
-        // widgets.icon.set_visible(self.icon.is_some());
         widgets.title.set_visible(self.title.is_some());
         widgets.image.set_visible(self.image.is_some());
         widgets.subtitle.set_visible(self.subtitle.is_some());
 
         if let Some(title) = &self.title {
-            widgets.title.set_label(title);
+            let title: String = title.chars().take(50).collect();
+            widgets.title.set_label(&title);
         }
         if let Some(subtitle) = &self.subtitle {
-            widgets.subtitle.set_label(subtitle);
+            let subtitle: String = subtitle.chars().take(50).collect();
+            widgets.subtitle.set_label(&subtitle);
         }
 
         if self.icon.is_some() {
-            let image = self.icon.as_ref().unwrap();
-            let rgb8_image = image.to_rgba8();
-            let (width, height) = rgb8_image.dimensions();
-            // Convert DynamicImage to Pixbuf
-            let pixbuf = Pixbuf::from_mut_slice(
-                rgb8_image.into_raw(),
-                gtk::gdk_pixbuf::Colorspace::Rgb,
-                true, // Has alpha channel
-                8,    // Bits per sample
-                width as i32,
-                height as i32,
-                width as i32 * 4, // Row stride (4 bytes per pixel)
-            );
-            widgets.icon.set_from_pixbuf(Some(&pixbuf));
+            let image = self.icon.as_ref().unwrap().borrow();
+            widgets.icon.set_from_pixbuf(Some(image));
+        }
+        if self.image.is_some() {
+            let image = self.image.as_ref().unwrap().borrow();
+            widgets.image.set_from_pixbuf(Some(image));
         }
     }
 
@@ -94,8 +90,9 @@ impl RelmListItem for SearchItem {
         relm4::view! {
             my_box = gtk::Box {
                 set_orientation: gtk::Orientation::Horizontal,
-                    set_hexpand: true,
+                set_hexpand: true,
                 set_halign: Align::Start,
+                set_margin_all: 5,
                 #[name="icon"]
                 gtk::Image {
                     set_vexpand: true,
@@ -115,6 +112,7 @@ impl RelmListItem for SearchItem {
                     },
                     #[name="image"]
                     gtk::Image {
+                        set_size_request: (250, 150),
                     },
                     #[name="subtitle"]
                     gtk::Label {
@@ -149,7 +147,13 @@ struct GtkApp {
 
 impl GtkApp {
     pub fn search(&mut self, query: &str) {
-        let search_items = self.os.borrow().search(query);
+        let search_items: Vec<_> = self
+            .os
+            .borrow()
+            .search(query)
+            .into_iter()
+            .take(20)
+            .collect();
         self.search_items.clear();
         self.search_items.extend_from_iter(search_items);
     }
@@ -219,11 +223,12 @@ impl SimpleComponent for GtkApp {
                 gtk::ScrolledWindow {
                     set_policy: (PolicyType::Automatic, PolicyType::Automatic),
                     set_size_request: (350, 650),
+                    set_vexpand: true,
                     #[local_ref]
                     search_items_box -> gtk::ListView{
-                        set_vexpand: false,
-                        set_orientation: gtk::Orientation::Vertical,
-                        set_vscroll_policy: gtk::ScrollablePolicy::Natural,
+                        // set_vexpand: false,
+                        // set_orientation: gtk::Orientation::Vertical,
+                        // set_vscroll_policy: gtk::ScrollablePolicy::Natural,
                     }
                 }
             }
@@ -237,8 +242,7 @@ impl SimpleComponent for GtkApp {
     ) -> ComponentParts<Self> {
         let (os, prompt) = init;
         let os_for_key_pressed = os.clone();
-        let search_items: TypedListView<SearchItem, gtk::SingleSelection> =
-            TypedListView::new();
+        let search_items: TypedListView<SearchItem, gtk::SingleSelection> = TypedListView::new();
         let search_items_box = &search_items.view;
         let widgets = view_output!();
         let search_entry = widgets.search_entry.clone();

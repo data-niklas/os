@@ -1,21 +1,24 @@
 use crate::history::History;
+use crate::model::SearchItem;
 use crate::opts::Config;
 use crate::plugin::Plugin;
-use crate::source::{ApplicationsSource, HstrSource, Source, StdinSource, ZoxideSource};
+use crate::source::{
+    ApplicationsSource, CliphistSource, HstrSource, Source, StdinSource, ZoxideSource,
+};
 use crate::APP_NAME;
 use shlex::{self, Shlex};
 use std::collections::HashMap;
 use std::process::Command;
+use wl_clipboard_rs::copy::{MimeType, Options, Source as ClipboardSource};
 use xdg::BaseDirectories;
 
 use fuzzy_matcher::{skim::SkimMatcherV2, FuzzyMatcher};
-use tokio::runtime::Runtime;
+use rayon::prelude::*;
 
 pub struct Os {
     plugins: Vec<Plugin>,
-    runtime: Runtime,
-    matcher: Box<dyn FuzzyMatcher>,
-    sources: HashMap<String, Box<dyn Source>>,
+    matcher: Box<dyn FuzzyMatcher + Send + Sync>,
+    sources: HashMap<String, Box<dyn Source + Send + Sync>>,
     config: Config,
     history: History,
 }
@@ -38,55 +41,62 @@ impl Os {
             .collect()
     }
 
-    async fn init_sources(sources: &mut HashMap<String, Box<dyn Source>>) {
-        for (_, source) in sources.iter_mut() {
-            source.init().await;
-        }
+    fn init_sources(sources: &mut HashMap<String, Box<dyn Source + Send + Sync>>) {
+        sources.par_iter_mut().for_each(|(_, source)| {
+            source.init();
+        });
     }
 
     fn wrap_init_sources(&mut self) {
         let sources = &mut self.sources;
-        self.runtime.block_on(Os::init_sources(sources));
+        Os::init_sources(sources);
     }
 
     pub fn search(&self, query: &str) -> Vec<crate::model::SearchItem> {
         let sources = &self.sources;
         let matcher = &self.matcher;
-        self.runtime.block_on(async {
-            let mut items = vec![];
-            for (_, source) in sources.iter() {
-                let source_results = source.search(query, matcher).await;
-                items.extend(source_results);
+        // let mut items = vec![];
+        let items = sources
+            .iter()
+            .flat_map(|(_, source)| source.search(query, matcher))
+            .collect::<Vec<SearchItem>>();
+        let mut items_with_history_score = items
+            .into_iter()
+            .map(|item| {
+                let history_score = self.history.get(&item);
+                (item, history_score)
+            })
+            .collect::<Vec<(SearchItem, u32)>>();
+        // for (_, source) in sources.iter() {
+        //     let source_results = source.search(query, matcher);
+        //     items.extend(source_results);
+        // }
+        // let mut items_with_history_score = items
+        //     .into_iter()
+        //     .map(|item| {
+        //         let history_score = self.history.get(&item);
+        //         (item, history_score)
+        //     })
+        //     .collect::<Vec<_>>();
+        items_with_history_score.sort_by(|a, b| {
+            let cmp = b.1.cmp(&a.1);
+            if cmp == std::cmp::Ordering::Equal {
+                b.0.cmp(&a.0)
+            } else {
+                cmp
             }
-            let mut items_with_history_score = items
-                .into_iter()
-                .map(|item| {
-                    let history_score = self.history.get(&item);
-                    (item, history_score)
-                })
-                .collect::<Vec<_>>();
-            items_with_history_score.sort_by(|a, b| {
-                let cmp = b.1.cmp(&a.1);
-                if cmp == std::cmp::Ordering::Equal {
-                    b.0.cmp(&a.0)
-                } else {
-                    cmp
-                }
-            });
-            items_with_history_score
-                .into_iter()
-                .map(|(item, _)| item)
-                .collect()
-        })
+        });
+        items_with_history_score
+            .into_iter()
+            .map(|(item, _)| item)
+            .collect()
     }
 
     pub fn deinit(&mut self) {
         let sources = &mut self.sources;
-        self.runtime.block_on(async {
-            for (_, source) in sources.iter_mut() {
-                source.deinit().await;
-            }
-        });
+        for (_, source) in sources.iter_mut() {
+            source.deinit();
+        }
         // self.history.deinit();
     }
 
@@ -112,6 +122,14 @@ impl Os {
             crate::model::SelectAction::Noop => {
                 return;
             }
+            crate::model::SelectAction::CopyToClipboard(content) => {
+                let opts = Options::new();
+                opts.copy(
+                    ClipboardSource::Bytes(content.into_boxed_slice()),
+                    MimeType::Autodetect,
+                )
+                .unwrap();
+            }
         };
         self.deinit();
         std::process::exit(0);
@@ -125,13 +143,13 @@ impl Os {
 
     pub fn new(config: Config) -> Self {
         let plugins = Os::load_plugins(&config.plugin);
-        let runtime = Runtime::new().expect("Failed to create Tokio runtime");
         let matcher = Box::new(SkimMatcherV2::default());
-        let sources: Vec<Box<dyn Source>> = vec![
+        let sources: Vec<Box<dyn Source + Send + Sync>> = vec![
             Box::new(StdinSource::new()),
             Box::new(ApplicationsSource::new()),
             Box::new(ZoxideSource::new()),
             Box::new(HstrSource::new()),
+            Box::new(CliphistSource::new()),
         ];
         let sources = sources
             .into_iter()
@@ -140,7 +158,6 @@ impl Os {
         let mut config = Self {
             history: History::new(),
             plugins,
-            runtime,
             matcher,
             sources,
             config,

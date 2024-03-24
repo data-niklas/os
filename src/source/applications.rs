@@ -4,17 +4,17 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use async_trait::async_trait;
+use crate::model::ImmutablePixbuf;
 use freedesktop_desktop_entry::{default_paths, DesktopEntry, Iter, PathSource};
 use freedesktop_icon_lookup::Cache;
-use image::DynamicImage;
+use relm4::gtk::gdk_pixbuf::Pixbuf;
 
 use super::Source;
 
 pub struct ParsedDesktopEntry {
     pub name: String,
     pub description: String,
-    pub icon: Option<DynamicImage>,
+    pub icon: Option<ImmutablePixbuf>,
     pub exec: String,
     pub terminal: bool,
 }
@@ -47,7 +47,7 @@ impl ParsedDesktopEntry {
             .icon()
             .and_then(|icon| Self::lookup_icon(&icon, cache))
             .map(|icon_path| icon_path)
-            .map(|icon_path| image::open(icon_path).ok())
+            .map(|icon_path| Pixbuf::from_file(icon_path).map(ImmutablePixbuf::new).ok())
             .unwrap_or(None);
         let terminal = entry.terminal();
         Some(ParsedDesktopEntry {
@@ -70,13 +70,12 @@ impl ApplicationsSource {
     }
 }
 
-#[async_trait]
 impl Source for ApplicationsSource {
     fn name(&self) -> &'static str {
         "applications"
     }
 
-    async fn init(&mut self) {
+    fn init(&mut self) {
         let mut cache = Cache::new().unwrap();
         cache
             .load_default()
@@ -103,12 +102,12 @@ impl Source for ApplicationsSource {
         self.entries = parsed_entries;
     }
 
-    async fn deinit(&mut self) {}
+    fn deinit(&mut self) {}
 
-    async fn search(
+    fn search(
         &self,
         query: &str,
-        matcher: &Box<dyn fuzzy_matcher::FuzzyMatcher>,
+        matcher: &Box<dyn fuzzy_matcher::FuzzyMatcher + Send + Sync>,
     ) -> Vec<crate::model::SearchItem> {
         self.entries
             .iter()

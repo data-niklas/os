@@ -1,6 +1,5 @@
 use crate::model::{SearchItem, SelectAction};
 use crate::source::Source;
-use async_trait::async_trait;
 use fuzzy_matcher::FuzzyMatcher;
 use std::process::Command;
 
@@ -12,16 +11,19 @@ impl HstrSource {
     }
 }
 
-#[async_trait]
 impl Source for HstrSource {
     fn name(&self) -> &'static str {
         "hstr"
     }
 
-    async fn init(&mut self) {}
-    async fn deinit(&mut self) {}
+    fn init(&mut self) {}
+    fn deinit(&mut self) {}
 
-    async fn search(&self, query: &str, matcher: &Box<dyn FuzzyMatcher>) -> Vec<SearchItem> {
+    fn search(
+        &self,
+        query: &str,
+        matcher: &Box<dyn FuzzyMatcher + Send + Sync>,
+    ) -> Vec<SearchItem> {
         let output = Command::new("hstr")
             .arg("-n")
             .args(query.split_whitespace())

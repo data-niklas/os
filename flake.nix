@@ -24,134 +24,132 @@
                 (pkgs.rustBuilder.rustLib.makeOverride {
                   name = "os";
                   overrideAttrs = drv: {
-                    nativeBuildInputs =
-                      drv.nativeBuildInputs
-                      ++ [
-                        pkgs.sqlite
-                        pkgs.pkg-config
-                      ];
+                    nativeBuildInputs = [
+                      pkgs.pkg-config
+                    ];
+                    buildInputs = [pkgs.sqlite];
                   };
                 })
                 (pkgs.rustBuilder.rustLib.makeOverride {
                   name = "gtk4-sys";
                   overrideAttrs = drv: {
-                    nativeBuildInputs =
-                      drv.nativeBuildInputs
-                      ++ [
-                        pkgs.gtk4
-                        pkgs.pkg-config
-                      ];
+                    nativeBuildInputs = [
+                      pkgs.pkg-config
+                    ];
+                    buildInputs = [
+                      pkgs.gtk4
+                    ];
                   };
                 })
                 (pkgs.rustBuilder.rustLib.makeOverride {
                   name = "gtk4-layer-shell-sys";
                   overrideAttrs = drv: {
-                    nativeBuildInputs =
-                      drv.nativeBuildInputs
-                      ++ [
-                        pkgs.gtk4-layer-shell
-                        pkgs.pkg-config
-                      ];
+                    nativeBuildInputs = [
+                      pkgs.pkg-config
+                    ];
+                    buildInputs = [
+                      pkgs.gtk4-layer-shell
+                    ];
                   };
                 })
                 (pkgs.rustBuilder.rustLib.makeOverride {
                   name = "glib-sys";
                   overrideAttrs = drv: {
-                    nativeBuildInputs =
-                      drv.nativeBuildInputs
-                      ++ [
-                        pkgs.glib
-                        pkgs.pkg-config
-                      ];
+                    nativeBuildInputs = [
+                      pkgs.pkg-config
+                    ];
+                    buildInputs = [
+                      pkgs.glib
+                    ];
                   };
                 })
                 (pkgs.rustBuilder.rustLib.makeOverride {
                   name = "gobject-sys";
                   overrideAttrs = drv: {
-                    nativeBuildInputs =
-                      drv.nativeBuildInputs
-                      ++ [
-                        pkgs.glib
-                        pkgs.pkg-config
-                      ];
+                    nativeBuildInputs = [
+                      pkgs.pkg-config
+                    ];
+                    buildInputs = [
+                      pkgs.glib
+                    ];
                   };
                 })
                 (pkgs.rustBuilder.rustLib.makeOverride {
                   name = "graphene-sys";
                   overrideAttrs = drv: {
-                    nativeBuildInputs =
-                      drv.nativeBuildInputs
-                      ++ [
-                        pkgs.graphene
-                        pkgs.gobject-introspection
-                        pkgs.pkg-config
-                      ];
+                    nativeBuildInputs = [
+                      pkgs.pkg-config
+                    ];
+                    buildInputs = [
+                      pkgs.graphene
+                      pkgs.gobject-introspection
+                    ];
                   };
                 })
                 (pkgs.rustBuilder.rustLib.makeOverride {
                   name = "cairo-sys-rs";
                   overrideAttrs = drv: {
-                    nativeBuildInputs =
-                      drv.nativeBuildInputs
-                      ++ [
-                        pkgs.cairo
-                        pkgs.pkg-config
-                      ];
+                    nativeBuildInputs = [
+                      pkgs.pkg-config
+                    ];
+                    buildInputs = [
+                      pkgs.cairo
+                    ];
                   };
                 })
                 (pkgs.rustBuilder.rustLib.makeOverride {
                   name = "gio-sys";
                   overrideAttrs = drv: {
-                    nativeBuildInputs =
-                      drv.nativeBuildInputs
-                      ++ [
-                        pkgs.glib
-                        pkgs.pkg-config
-                      ];
+                    nativeBuildInputs = [
+                      pkgs.pkg-config
+                    ];
+                    buildInputs = [
+                      pkgs.glib
+                    ];
                   };
                 })
                 (pkgs.rustBuilder.rustLib.makeOverride {
                   name = "pango-sys";
                   overrideAttrs = drv: {
-                    nativeBuildInputs =
-                      drv.nativeBuildInputs
-                      ++ [
-                        pkgs.pango
-                        pkgs.pkg-config
-                      ];
+                    nativeBuildInputs = [
+                      pkgs.pkg-config
+                    ];
+                    buildInputs = [
+                      pkgs.pango
+                    ];
                   };
                 })
                 (pkgs.rustBuilder.rustLib.makeOverride {
                   name = "gdk-pixbuf-sys";
                   overrideAttrs = drv: {
-                    nativeBuildInputs =
-                      drv.nativeBuildInputs
-                      ++ [
-                        pkgs.gdk-pixbuf
-                        pkgs.pkg-config
-                      ];
+                    nativeBuildInputs = [
+                      pkgs.pkg-config
+                    ];
+                    buildInputs = [
+                      pkgs.gdk-pixbuf
+                    ];
                   };
                 })
                 (pkgs.rustBuilder.rustLib.makeOverride {
                   name = "gdk4-sys";
                   overrideAttrs = drv: {
-                    nativeBuildInputs =
-                      drv.nativeBuildInputs
-                      ++ [
-                        pkgs.gtk4
-                        pkgs.pkg-config
-                      ];
+                    nativeBuildInputs = [
+                      pkgs.pkg-config
+                    ];
+                    buildInputs = [
+                      pkgs.gtk4
+                    ];
                   };
                 })
                 (pkgs.rustBuilder.rustLib.makeOverride {
                   name = "gsk4-sys";
                   overrideAttrs = drv: {
-                    nativeBuildInputs =
-                      drv.nativeBuildInputs
-                      ++ [
-                        pkgs.gtk4
-                        pkgs.pkg-config
-                      ];
+                    nativeBuildInputs = [
+                      pkgs.pkg-config
+                    ];
+                    buildInputs = [
+                      pkgs.gtk4
+                    ];
                   };
                 })
               ];
