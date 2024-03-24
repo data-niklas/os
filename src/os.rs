@@ -129,16 +129,27 @@ impl Os {
         self.run_select_action(select_action);
     }
 
+    fn load_sources(enabled_sources: &Vec<String>) -> Vec<Box<dyn Source + Send + Sync>> {
+        let mut sources: Vec<Box<dyn Source + Send + Sync>> = vec![];
+        for name in enabled_sources {
+            match name.as_str() {
+                "stdin" => sources.push(Box::new(StdinSource::new())),
+                "hstr" => sources.push(Box::new(HstrSource::new())),
+                "cliphist" => sources.push(Box::new(CliphistSource::new())),
+                "zoxide" => sources.push(Box::new(ZoxideSource::new())),
+                "applications" => sources.push(Box::new(ApplicationsSource::new())),
+                _ => {}
+            }
+        }
+
+        sources
+    }
+
     pub fn new(config: Config) -> Self {
         let plugins = Os::load_plugins(&config.plugin);
         let matcher = Box::new(SkimMatcherV2::default());
-        let sources: Vec<Box<dyn Source + Send + Sync>> = vec![
-            Box::new(StdinSource::new()),
-            Box::new(ApplicationsSource::new()),
-            Box::new(ZoxideSource::new()),
-            Box::new(HstrSource::new()),
-            Box::new(CliphistSource::new()),
-        ];
+        let sources: Vec<Box<dyn Source + Send + Sync>> =
+            Self::load_sources(&config.sources);
         let sources = sources
             .into_iter()
             .map(|s| (s.name().to_string(), s))

@@ -57,6 +57,14 @@ pub struct Config {
     #[clap(skip)]
     pub plugin: HashMap<String, HashMap<String, toml::Value>>,
 
+    #[serde(default)]
+    #[clap(skip)]
+    pub source: HashMap<String, HashMap<String, toml::Value>>,
+
+    #[default(vec!["stdin".to_string()])]
+    #[clap(short, long, env)]
+    pub sources: Vec<String>,
+
     #[default("Search".to_string())]
     #[clap(short, long)]
     pub prompt: String,
