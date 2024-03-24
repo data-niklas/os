@@ -8,15 +8,20 @@ use rayon::prelude::*;
 use relm4::gtk::gdk::Texture;
 use relm4::gtk::gdk_pixbuf::Pixbuf;
 use relm4::gtk::glib::Bytes;
+use std::collections::HashMap;
 use std::hash::{BuildHasher, Hasher};
 use std::io::Cursor;
 use std::path::PathBuf;
 use std::process::Command;
 use xdg::BaseDirectories;
-use std::collections::HashMap;
 
 pub struct CliphistSource {
-    items: Vec<(Option<String>, Option<ImmutablePixbuf>, u64)>,
+    items: Vec<(
+        Option<String>,
+        Option<ImmutablePixbuf>,
+        ClipboardContent,
+        u64,
+    )>,
 }
 
 impl CliphistSource {
@@ -30,7 +35,12 @@ impl CliphistSource {
     }
     fn build_item(
         &self,
-        item: (Option<String>, Option<ImmutablePixbuf>, u64),
+        item: (
+            Option<String>,
+            Option<ImmutablePixbuf>,
+            ClipboardContent,
+            u64,
+        ),
         query: &str,
         matcher: &Box<dyn FuzzyMatcher + Send + Sync>,
     ) -> SearchItem {
@@ -44,10 +54,9 @@ impl CliphistSource {
             // TODO: better default score for images
             1
         };
-        let item_action = item.clone();
 
         SearchItem {
-            id: "cliphist".to_string() + &item.2.to_string(),
+            id: "cliphist".to_string() + &item.3.to_string(),
             title: item.0,
             subtitle: Some("(cliphist)".to_string()),
             icon: None,
@@ -55,13 +64,9 @@ impl CliphistSource {
             score,
             source: self.name(),
             action: Box::new(move || {
-                let item = &item_action;
-                let content = if item.0.is_some() {
-                    ClipboardContent::Text(item.0.as_ref().unwrap().to_string())
-                } else {
-                    ClipboardContent::Image(item.1.as_ref().unwrap().clone())
-                };
-                SelectAction::CopyToClipboard(content)
+                let clipboard_content = item.2.clone();
+
+                SelectAction::CopyToClipboard(clipboard_content)
             }),
             layer: crate::model::ItemLayer::Bottom,
         }
@@ -94,32 +99,16 @@ impl Source for CliphistSource {
                 let mut hasher = random_state.build_hasher();
                 hasher.write(&value);
                 let cursor_value = value.to_vec();
+                let clipboard_content = ClipboardContent(cursor_value.to_vec());
                 let cursor = Cursor::new(cursor_value);
                 let hash = hasher.finish();
                 let (title, image) = match Pixbuf::from_read(cursor) {
                     Err(_) => (String::from_utf8(value).ok(), None),
                     Ok(img) => (None, Some(ImmutablePixbuf::new(img))),
                 };
-                (title, image, hash)
+                (title, image, clipboard_content, hash)
             })
             .collect();
-        // let mut items = vec![];
-        // let _ = bucket.for_each::<nut::Error>(Box::new(|_key, value| {
-        //     let value = value.unwrap();
-        //
-        //     hasher.write(value);
-        //     let owned_value = value.to_vec();
-        //     let cursor = Cursor::new(owned_value);
-        //     let hash = hasher.finish();
-        //     let (title, image) = match Pixbuf::from_read(cursor) {
-        //         Err(_) => (String::from_utf8(value.to_vec()).ok(), None),
-        //         Ok(img) => (None, Some(ImmutablePixbuf::new(img))),
-        //     };
-        //     if title.is_some() || image.is_some() {
-        //         items.push((title, image, hash));
-        //     }
-        //     Ok(())
-        // }));
         self.items = items;
     }
     fn deinit(&mut self) {}

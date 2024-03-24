@@ -9,7 +9,6 @@ use crate::APP_NAME;
 use shlex::{self, Shlex};
 use std::collections::HashMap;
 use std::process::Command;
-use wl_clipboard_rs::copy::{MimeType, Options, Source as ClipboardSource};
 use xdg::BaseDirectories;
 
 use fuzzy_matcher::{skim::SkimMatcherV2, FuzzyMatcher};
@@ -115,12 +114,7 @@ impl Os {
                 return;
             }
             crate::model::SelectAction::CopyToClipboard(content) => {
-                let opts = Options::new();
-                opts.copy(
-                    ClipboardSource::Bytes(content.into_boxed_slice()),
-                    MimeType::Autodetect,
-                )
-                .unwrap();
+               content.copy();
             }
         };
         self.deinit();

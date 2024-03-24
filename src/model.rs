@@ -1,9 +1,9 @@
 use relm4::gtk::gdk_pixbuf::Pixbuf;
+use std::io::Write;
+use std::process::{Command, Stdio};
 
-pub enum ClipboardContent {
-    Text(String),
-    Image(ImmutablePixbuf),
-}
+#[derive(Clone)]
+pub struct ClipboardContent(pub Vec<u8>);
 
 pub struct ImmutablePixbuf(Pixbuf);
 impl ImmutablePixbuf {
@@ -30,15 +30,16 @@ unsafe impl Send for ImmutablePixbuf {}
 unsafe impl Sync for ImmutablePixbuf {}
 
 impl ClipboardContent {
-    pub fn into_boxed_slice(self) -> Box<[u8]> {
-        match self {
-            ClipboardContent::Text(text) => text.into_bytes().into_boxed_slice(),
-            ClipboardContent::Image(image) => image
-                .borrow()
-                .read_pixel_bytes()
-                .to_vec()
-                .into_boxed_slice(),
-        }
+
+    pub fn copy(self) {
+        let copy_command = Command::new("wl-copy")
+            .stdin(Stdio::piped())
+            .spawn()
+            .expect("Failed to spawn command");
+        let mut stdin = copy_command.stdin.unwrap();
+        stdin
+            .write_all(self.0.as_slice())
+            .expect("Failed to write to stdin");
     }
 }
 
