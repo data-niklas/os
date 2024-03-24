@@ -89,7 +89,7 @@ impl RatatuiUI {
                 Block::default()
                     .borders(Borders::ALL)
                     .border_type(ratatui::widgets::BorderType::Rounded)
-                    .title("Input"),
+                    .title(app.prompt.clone()),
             );
         frame.render_widget(input, chunks[0]);
 

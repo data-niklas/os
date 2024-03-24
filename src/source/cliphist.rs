@@ -8,12 +8,23 @@ use rayon::prelude::*;
 use relm4::gtk::gdk::Texture;
 use relm4::gtk::gdk_pixbuf::Pixbuf;
 use relm4::gtk::glib::Bytes;
+use serde::Deserialize;
 use std::collections::HashMap;
 use std::hash::{BuildHasher, Hasher};
 use std::io::Cursor;
 use std::path::PathBuf;
 use std::process::Command;
 use xdg::BaseDirectories;
+
+const fn _default_icons() -> bool {
+    true
+}
+
+#[derive(Deserialize)]
+pub struct CliphistConfig {
+    #[serde(default = "_default_icons")]
+    pub icons: bool,
+}
 
 pub struct CliphistSource {
     items: Vec<(
@@ -79,6 +90,7 @@ impl Source for CliphistSource {
     }
 
     fn init(&mut self, config: &toml::Table) {
+        let config: CliphistConfig = config.clone().try_into().unwrap();
         let xdg = BaseDirectories::with_prefix("cliphist").unwrap();
         let db_path = xdg.place_cache_file("db").unwrap();
         let seed = 42;
@@ -95,7 +107,7 @@ impl Source for CliphistSource {
         }));
         let items = values
             .into_par_iter()
-            .map(|value| {
+            .filter_map(|value| {
                 let mut hasher = random_state.build_hasher();
                 hasher.write(&value);
                 let cursor_value = value.to_vec();
@@ -104,9 +116,19 @@ impl Source for CliphistSource {
                 let hash = hasher.finish();
                 let (title, image) = match Pixbuf::from_read(cursor) {
                     Err(_) => (String::from_utf8(value).ok(), None),
-                    Ok(img) => (None, Some(ImmutablePixbuf::new(img))),
+                    Ok(img) => (
+                        None,
+                        if config.icons {
+                            Some(ImmutablePixbuf::new(img))
+                        } else {
+                            None
+                        },
+                    ),
                 };
-                (title, image, clipboard_content, hash)
+                if title.is_none() && image.is_none() {
+                    return None;
+                }
+                Some((title, image, clipboard_content, hash))
             })
             .collect();
         self.items = items;
