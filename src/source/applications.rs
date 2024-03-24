@@ -8,7 +8,7 @@ use crate::model::ImmutablePixbuf;
 use freedesktop_desktop_entry::{default_paths, DesktopEntry, Iter, PathSource};
 use freedesktop_icon_lookup::Cache;
 use relm4::gtk::gdk_pixbuf::Pixbuf;
-
+use rayon::prelude::*;
 use super::Source;
 
 pub struct ParsedDesktopEntry {
@@ -82,8 +82,8 @@ impl Source for ApplicationsSource {
             .expect("Failed to load default icon cache");
         let paths = default_paths();
         let parsed_entries: Vec<ParsedDesktopEntry> = Iter::new(paths)
-            .into_iter()
-            .map(|path| {
+            .par_bridge()
+            .filter_map(|path| {
                 let path_src = PathSource::guess_from(&path);
                 if let Ok(bytes) = fs::read_to_string(&path) {
                     let entry = DesktopEntry::decode(&path, &bytes);
@@ -96,8 +96,6 @@ impl Source for ApplicationsSource {
                     None
                 }
             })
-            .filter(|x| x.is_some())
-            .map(|x| x.unwrap())
             .collect();
         self.entries = parsed_entries;
     }

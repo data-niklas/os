@@ -152,7 +152,7 @@ impl GtkApp {
             .borrow()
             .search(query)
             .into_iter()
-            .take(20)
+            .take(50)
             .collect();
         self.search_items.clear();
         self.search_items.extend_from_iter(search_items);

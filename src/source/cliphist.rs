@@ -77,28 +77,48 @@ impl Source for CliphistSource {
         let db_path = xdg.place_cache_file("db").unwrap();
         let seed = 42;
         let random_state = RandomState::with_seed(seed);
-        let mut hasher = random_state.build_hasher();
         let db = Self::db(db_path);
         let tx = db.begin_tx().unwrap();
 
         let bucket = tx.bucket(b"b").unwrap();
-        let mut items = vec![];
+        let mut values = vec![];
         let _ = bucket.for_each::<nut::Error>(Box::new(|_key, value| {
             let value = value.unwrap();
-
-            hasher.write(value);
-            let owned_value = value.to_vec();
-            let cursor = Cursor::new(owned_value);
-            let hash = hasher.finish();
-            let (title, image) = match Pixbuf::from_read(cursor) {
-                Err(_) => (String::from_utf8(value.to_vec()).ok(), None),
-                Ok(img) => (None, Some(ImmutablePixbuf::new(img))),
-            };
-            if title.is_some() || image.is_some() {
-                items.push((title, image, hash));
-            }
+            values.push(value.to_vec());
             Ok(())
         }));
+        let items = values
+            .into_par_iter()
+            .map(|value| {
+                let mut hasher = random_state.build_hasher();
+                hasher.write(&value);
+                let cursor_value = value.to_vec();
+                let cursor = Cursor::new(cursor_value);
+                let hash = hasher.finish();
+                let (title, image) = match Pixbuf::from_read(cursor) {
+                    Err(_) => (String::from_utf8(value).ok(), None),
+                    Ok(img) => (None, Some(ImmutablePixbuf::new(img))),
+                };
+                (title, image, hash)
+            })
+            .collect();
+        // let mut items = vec![];
+        // let _ = bucket.for_each::<nut::Error>(Box::new(|_key, value| {
+        //     let value = value.unwrap();
+        //
+        //     hasher.write(value);
+        //     let owned_value = value.to_vec();
+        //     let cursor = Cursor::new(owned_value);
+        //     let hash = hasher.finish();
+        //     let (title, image) = match Pixbuf::from_read(cursor) {
+        //         Err(_) => (String::from_utf8(value.to_vec()).ok(), None),
+        //         Ok(img) => (None, Some(ImmutablePixbuf::new(img))),
+        //     };
+        //     if title.is_some() || image.is_some() {
+        //         items.push((title, image, hash));
+        //     }
+        //     Ok(())
+        // }));
         self.items = items;
     }
     fn deinit(&mut self) {}

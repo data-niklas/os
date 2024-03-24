@@ -55,7 +55,6 @@ impl Os {
     pub fn search(&self, query: &str) -> Vec<crate::model::SearchItem> {
         let sources = &self.sources;
         let matcher = &self.matcher;
-        // let mut items = vec![];
         let items = sources
             .iter()
             .flat_map(|(_, source)| source.search(query, matcher))
@@ -67,17 +66,6 @@ impl Os {
                 (item, history_score)
             })
             .collect::<Vec<(SearchItem, u32)>>();
-        // for (_, source) in sources.iter() {
-        //     let source_results = source.search(query, matcher);
-        //     items.extend(source_results);
-        // }
-        // let mut items_with_history_score = items
-        //     .into_iter()
-        //     .map(|item| {
-        //         let history_score = self.history.get(&item);
-        //         (item, history_score)
-        //     })
-        //     .collect::<Vec<_>>();
         items_with_history_score.sort_by(|a, b| {
             let cmp = b.1.cmp(&a.1);
             if cmp == std::cmp::Ordering::Equal {
