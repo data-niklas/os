@@ -1,81 +1,68 @@
-use clap::{Args as ClapArgs,Parser};
-use serde::{Deserialize, Serialize};
+// use clap::{Args as ClapArgs,Parser};
+use crate::APP_NAME;
+use clap_serde_derive::{
+    clap,
+    clap::{builder::OsStr, ArgAction, Parser},
+    serde::{Deserialize, Serialize},
+    ClapSerde,
+};
 use std::{
     collections::HashMap,
     path::{Path, PathBuf},
 };
 use toml::Value;
 use xdg::BaseDirectories;
-use crate::APP_NAME;
 
 #[derive(Parser)]
 #[clap(author, version, about)]
 pub struct Args {
-    /// Input files
-    // input: Vec<std::path::PathBuf>,
-
     /// Config file
-    #[clap(short, long = "config", env)]
-    pub config_path: Option<std::path::PathBuf>,
+    #[clap(short, long = "config", env, default_value = Config::default_path().into_os_string())]
+    pub config_path: std::path::PathBuf,
 
     /// Rest of arguments
-    #[clap(flatten)]
-    // pub config: <Config as ClapSerde>::Opt,
-    pub config: Config
+    #[command(flatten)]
+    pub config: <Config as ClapSerde>::Opt,
 }
 
 impl Args {
     pub fn read_config() -> Config {
-        let args = Args::parse();
+        let mut args = Args::parse();
         let config_path = args.config_path;
-        let config_path = if config_path.is_none() {
-            let default_path = Config::default_path();
-            if default_path.exists() {
-                default_path
-            } else {
-                return Config::default();
+        let config = match std::fs::read_to_string(config_path) {
+            Ok(config) => config,
+            Err(_err) => {
+                return Config::from(&mut args.config);
             }
-        } else {
-            config_path.unwrap()
         };
-        let config = std::fs::read_to_string(config_path).unwrap();
-        toml::from_str(&config).unwrap()
+        match toml::from_str::<<Config as ClapSerde>::Opt>(&config) {
+            Ok(config) => Config::from(config).merge(&mut args.config),
+            Err(err) => panic!("Error in configuration file:\n{}", err),
+        }
     }
 }
 
-fn default_ui() -> String {
-    "gtk".to_string()
-}
-
-fn default_prompt() -> String {
-    "Search".to_string()
-}
-
-fn default_terminal() -> String {
-    "xterm".to_string()
-}
-
-#[derive(ClapArgs, Serialize, Deserialize, Debug, Default)]
+#[derive(ClapSerde, Deserialize, Debug)]
 pub struct Config {
     /// String argument
-    #[clap(long)]
     #[serde(default)]
+    #[clap(long)]
     pub plugins: Vec<String>,
 
-    #[clap(short, long, default_value = "gtk")]
-    #[serde(default = "default_ui")]
+    #[default("gtk".to_string())]
+    #[clap(short, long)]
     pub ui: String,
 
-    #[clap(skip)]
     #[serde(default)]
+    #[clap(skip)]
     pub plugin: HashMap<String, HashMap<String, toml::Value>>,
 
-    #[clap(short, long, default_value = "Search")]
-    #[serde(default = "default_prompt")]
+    #[default("Search".to_string())]
+    #[clap(short, long)]
     pub prompt: String,
 
-    #[clap(short, long, default_value = "xterm")]
-    #[serde(default = "default_terminal")]
+    #[default("xterm".to_string())]
+    #[clap(short, long)]
     pub terminal: String,
 }
 

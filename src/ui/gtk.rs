@@ -34,7 +34,7 @@ pub struct GtkUI {
 
 impl UI for GtkUI {
     fn run(&self) {
-        let app = RelmApp::new(APPLICATION_ID);
+        let app = RelmApp::new(APPLICATION_ID).with_args(vec![]);
         app.run::<GtkApp>((self.os.clone(), self.prompt.clone()));
     }
 }
@@ -188,7 +188,6 @@ impl SimpleComponent for GtkApp {
 
                 #[name="search_entry"]
                 gtk::SearchEntry {
-                    set_placeholder_text: Some("Search"),
                     connect_search_changed[sender] =>
                         move |it: &SearchEntry|{
                             let message = Msg::Search(it.text().to_string());
@@ -246,6 +245,7 @@ impl SimpleComponent for GtkApp {
         let search_items_box = &search_items.view;
         let widgets = view_output!();
         let search_entry = widgets.search_entry.clone();
+        search_entry.set_placeholder_text(Some(&prompt));
         let mut model = GtkApp {
             os,
             search_items,
