@@ -33,7 +33,7 @@ pub struct GtkUI {
 }
 
 impl UI for GtkUI {
-    fn run(&self) {
+    fn run(&mut self) {
         let app = RelmApp::new(APPLICATION_ID).with_args(vec![]);
         app.run::<GtkApp>((self.os.clone(), self.prompt.clone()));
     }

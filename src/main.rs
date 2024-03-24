@@ -14,6 +14,6 @@ fn main() {
     let prompt = config.prompt.clone();
     let ui_type = config.ui.clone();
     let app = os::Os::new(config);
-    let ui = ui::load_ui(ui_type, app, &prompt);
+    let mut ui = ui::load_ui(ui_type, app, &prompt);
     ui.run();
 }
