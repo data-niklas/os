@@ -152,7 +152,7 @@ impl GtkApp {
             .borrow()
             .search(query)
             .into_iter()
-            .take(50)
+            .take(self.os.borrow().config.maximum_list_item_count)
             .collect();
         self.search_items.clear();
         self.search_items.extend_from_iter(search_items);
@@ -202,6 +202,7 @@ impl SimpleComponent for GtkApp {
                             match keyval {
                                 Key::Escape => {
                                     os_for_key_pressed.borrow_mut().run_select_action(crate::model::SelectAction::Exit);
+                                    std::process::exit(0);
                                     Propagation::Stop
                                 },
                                 Key::Up => {
@@ -294,6 +295,7 @@ impl SimpleComponent for GtkApp {
                 let selected = self.search_items.get(selected).unwrap();
                 let item = selected.borrow();
                 self.os.borrow_mut().select(&item);
+                std::process::exit(0);
             }
         }
     }

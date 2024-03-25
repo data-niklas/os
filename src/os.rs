@@ -3,7 +3,7 @@ use crate::model::SearchItem;
 use crate::opts::Config;
 use crate::plugin::Plugin;
 use crate::source::{
-    ApplicationsSource, CliphistSource, HstrSource, Source, StdinSource, ZoxideSource,
+    ApplicationsSource, CliphistSource, HstrSource, Source, StdinSource, ZoxideSource, SystemctlSource
 };
 use crate::APP_NAME;
 use shlex::{self, Shlex};
@@ -18,7 +18,7 @@ pub struct Os {
     plugins: Vec<Plugin>,
     matcher: Box<dyn FuzzyMatcher + Send + Sync>,
     sources: HashMap<String, Box<dyn Source + Send + Sync>>,
-    config: Config,
+    pub config: Config,
     history: History,
 }
 
@@ -118,7 +118,6 @@ impl Os {
             }
         };
         self.deinit();
-        std::process::exit(0);
     }
 
     pub fn select(&mut self, item: &crate::model::SearchItem) {
@@ -130,12 +129,14 @@ impl Os {
     fn load_sources(enabled_sources: &Vec<String>) -> Vec<Box<dyn Source + Send + Sync>> {
         let mut sources: Vec<Box<dyn Source + Send + Sync>> = vec![];
         for name in enabled_sources {
+            // TODO: use registered name
             match name.as_str() {
                 "stdin" => sources.push(Box::new(StdinSource::new())),
                 "hstr" => sources.push(Box::new(HstrSource::new())),
                 "cliphist" => sources.push(Box::new(CliphistSource::new())),
                 "zoxide" => sources.push(Box::new(ZoxideSource::new())),
                 "applications" => sources.push(Box::new(ApplicationsSource::new())),
+                "systemctl" => sources.push(Box::new(SystemctlSource::new())),
                 _ => {}
             }
         }

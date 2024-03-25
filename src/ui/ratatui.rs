@@ -3,7 +3,7 @@ use crate::{model::SearchItem, os::Os};
 use crossterm::event::{Event, KeyEventKind};
 use crossterm::{event, execute, terminal::*};
 use ratatui::prelude::*;
-use ratatui::widgets::{Block, Borders, ListItem, Paragraph};
+use ratatui::widgets::{Block, Borders, ListItem, Paragraph, Scrollbar, ScrollbarState};
 use relm4::gtk::prelude::ListItemExt;
 use std::io;
 use std::io::{stdout, Stdout};
@@ -30,17 +30,31 @@ pub fn restore() -> io::Result<()> {
 
 struct App {
     pub prompt: String,
-    pub exit: bool,
     pub items: Vec<SearchItem>,
     pub input: Input,
     pub os: Os,
     pub list: ListState,
+    pub scroll_state: ScrollbarState,
 }
 
 impl App {
     pub fn search(&mut self) {
         let query = self.input.value();
-        self.items = self.os.search(query).into_iter().take(50).collect();
+        self.list.select(Some(0));
+        self.items = self
+            .os
+            .search(query)
+            .into_iter()
+            .take(self.os.config.maximum_list_item_count)
+            .collect();
+        self.scroll_state = self
+            .scroll_state
+            .position(0)
+            .content_length(self.items.len());
+    }
+
+    pub fn exit(&self) {
+        restore().unwrap();
     }
 }
 
@@ -53,16 +67,17 @@ pub struct RatatuiUI {
 impl RatatuiUI {
     pub fn new(os: Os, prompt: &str) -> Self {
         let tui = init().unwrap();
-        let mut list = ListState::default();
+        let mut list = ListState::default().circular(false);
         list.select(Some(0));
+        let scroll_state = ScrollbarState::default();
         RatatuiUI {
             app: App {
                 prompt: prompt.to_string(),
-                exit: false,
                 items: vec![],
                 input: Input::new("".to_string()),
                 os,
                 list,
+                scroll_state,
             },
             prompt: prompt.to_string(),
             tui,
@@ -73,13 +88,7 @@ impl RatatuiUI {
         let chunks = Layout::default()
             .direction(Direction::Vertical)
             // .margin(2)
-            .constraints(
-                [
-                    Constraint::Length(3),
-                    Constraint::Min(1),
-                ]
-                .as_ref(),
-            )
+            .constraints([Constraint::Length(3), Constraint::Min(1)].as_ref())
             .split(frame.size());
         let width = chunks[0].width.max(3) - 3; // keep 2 for borders and 1 for cursor
         let scroll = app.input.visual_scroll(width as usize);
@@ -89,8 +98,10 @@ impl RatatuiUI {
                 Block::default()
                     .borders(Borders::ALL)
                     .border_type(ratatui::widgets::BorderType::Rounded)
-                    .title(app.prompt.clone()),
-            );
+                    .title(app.prompt.clone())
+                    .style(Style::default().fg(Color::Reset)),
+            )
+            .fg(Color::Yellow);
         frame.render_widget(input, chunks[0]);
 
         let list = List::new(
@@ -99,11 +110,29 @@ impl RatatuiUI {
                 .map(|item| TuiSearchItem {
                     title: item.title.clone().unwrap_or("".to_string()),
                     subtitle: item.subtitle.clone().unwrap_or("".to_string()),
-                    style: Style::default(),
+                    title_style: Style::default().bold(),
+                    subtitle_style: Style::default().fg(Color::Gray).italic(),
                 })
                 .collect(),
         );
-        frame.render_stateful_widget(list, chunks[1], &mut app.list);
+        let list_scroll = Scrollbar::default()
+            .orientation(ratatui::widgets::ScrollbarOrientation::VerticalRight)
+            .begin_symbol(None)
+            .end_symbol(None)
+            .track_symbol(None)
+            .thumb_symbol("▐");
+        let list_chunks = Layout::default()
+            .direction(Direction::Horizontal)
+            .margin(1)
+            .constraints([Constraint::Min(1), Constraint::Length(1)].as_ref())
+            .split(chunks[1]);
+        let block = Block::default()
+            .borders(Borders::ALL)
+            .border_type(ratatui::widgets::BorderType::Rounded);
+        frame.render_stateful_widget(list, list_chunks[0], &mut app.list);
+        frame.render_stateful_widget(list_scroll, list_chunks[1], &mut app.scroll_state);
+        frame.render_widget(block, chunks[1]);
+        frame.set_cursor((1 + app.input.visual_cursor()) as u16, 1);
     }
 
     fn handle_events(app: &mut App) -> io::Result<()> {
@@ -113,21 +142,25 @@ impl RatatuiUI {
             Event::Key(key_event) if key_event.kind == KeyEventKind::Press => {
                 match key_event.code {
                     event::KeyCode::Esc => {
-                        app.exit = true;
+                        app.exit();
+                        std::process::exit(0);
                     }
                     event::KeyCode::Enter => {
+                        app.exit();
                         let item = app.items.get(app.list.selected().unwrap()).unwrap();
                         app.os.select(item);
+                        std::process::exit(0);
                     }
                     event::KeyCode::Down => {
                         app.list.next();
+                        app.scroll_state.next();
                     }
                     event::KeyCode::Up => {
                         app.list.previous();
+                        app.scroll_state.prev();
                     }
                     _ => {
                         app.input.handle_event(&Event::Key(key_event));
-                        app.list.select(Some(0));
                         app.search();
                     }
                 }
@@ -141,7 +174,8 @@ impl RatatuiUI {
 struct TuiSearchItem {
     title: String,
     subtitle: String,
-    style: Style,
+    title_style: Style,
+    subtitle_style: Style,
 }
 
 impl ListableWidget for TuiSearchItem {
@@ -153,7 +187,8 @@ impl ListableWidget for TuiSearchItem {
         Self: Sized,
     {
         Self {
-            style: Style::default().fg(Color::Yellow),
+            title_style: self.title_style.fg(Color::Yellow),
+            subtitle_style: self.subtitle_style.fg(Color::Yellow),
             ..self
         }
     }
@@ -164,8 +199,8 @@ impl Widget for TuiSearchItem {
     where
         Self: Sized,
     {
-        let title = Line::styled(self.title.clone(), self.style.clone().bold());
-        let subtitle = Line::styled(self.subtitle.clone(), self.style.clone());
+        let title = Line::styled(self.title.clone(), self.title_style);
+        let subtitle = Line::styled(self.subtitle.clone(), self.subtitle_style);
         buf.set_line(area.x, area.y, &title, area.width);
         buf.set_line(area.x, area.y + 1, &subtitle, area.width);
     }
@@ -174,12 +209,11 @@ impl Widget for TuiSearchItem {
 impl UI for RatatuiUI {
     fn run(&mut self) {
         self.app.search();
-        while !self.app.exit {
+        loop {
             self.tui
                 .draw(|frame| Self::render_frame(frame, &mut self.app))
                 .unwrap();
             Self::handle_events(&mut self.app).unwrap();
         }
-        restore().unwrap();
     }
 }

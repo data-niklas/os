@@ -17,6 +17,9 @@ pub use hstr::*;
 mod cliphist;
 pub use cliphist::*;
 
+mod systemctl;
+pub use systemctl::*;
+
 pub trait Source {
     fn name(&self) -> &'static str;
     fn init(&mut self, config: &toml::Table);

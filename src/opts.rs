@@ -42,6 +42,10 @@ impl Args {
     }
 }
 
+fn default_terminal() -> String {
+    std::env::var("TERMINAL").unwrap_or_else(|_| "xterm".to_string())
+}
+
 #[derive(ClapSerde, Deserialize, Debug)]
 pub struct Config {
     /// String argument
@@ -62,16 +66,20 @@ pub struct Config {
     pub source: HashMap<String, toml::Table>,
 
     #[default(vec!["stdin".to_string()])]
-    #[clap(short, long, env)]
+    #[clap(short, long, env, value_parser, value_delimiter = ' ', num_args = 1..)]
     pub sources: Vec<String>,
 
     #[default("Search".to_string())]
     #[clap(short, long)]
     pub prompt: String,
 
-    #[default("xterm".to_string())]
+    #[default(default_terminal())]
     #[clap(short, long)]
     pub terminal: String,
+
+    #[default(50)]
+    #[clap(short, long)]
+    pub maximum_list_item_count: usize
 }
 
 impl Config {
