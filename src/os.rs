@@ -3,7 +3,8 @@ use crate::model::SearchItem;
 use crate::opts::Config;
 use crate::plugin::Plugin;
 use crate::source::{
-    ApplicationsSource, CliphistSource, HstrSource, Source, StdinSource, ZoxideSource, SystemctlSource
+    ApplicationsSource, CliphistSource, HstrSource, LinkdingSource, Source, StdinSource,
+    SystemctlSource, ZoxideSource,
 };
 use crate::APP_NAME;
 use shlex::{self, Shlex};
@@ -40,16 +41,12 @@ impl Os {
             .collect()
     }
 
-    fn init_sources(sources: &mut HashMap<String, Box<dyn Source + Send + Sync>>) {
-    }
-
-    fn wrap_init_sources(&mut self) {
+    fn init_sources(&mut self) {
         self.sources.par_iter_mut().for_each(|(_, source)| {
             let source_name = source.name();
             if let Some(config) = self.config.source.get(source_name) {
                 source.init(config);
-            }
-            else {
+            } else {
                 source.init(&toml::Table::new());
             }
         });
@@ -114,7 +111,12 @@ impl Os {
                 return;
             }
             crate::model::SelectAction::CopyToClipboard(content) => {
-               content.copy();
+                content.copy();
+            }
+            crate::model::SelectAction::OpenUrl(url) => {
+                let mut command = Command::new("xdg-open");
+                command.arg(url);
+                command.spawn().expect("Failed to spawn command");
             }
         };
         self.deinit();
@@ -137,6 +139,7 @@ impl Os {
                 "zoxide" => sources.push(Box::new(ZoxideSource::new())),
                 "applications" => sources.push(Box::new(ApplicationsSource::new())),
                 "systemctl" => sources.push(Box::new(SystemctlSource::new())),
+                "linkding" => sources.push(Box::new(LinkdingSource::new())),
                 _ => {}
             }
         }
@@ -147,8 +150,7 @@ impl Os {
     pub fn new(config: Config) -> Self {
         let plugins = Os::load_plugins(&config.plugin);
         let matcher = Box::new(SkimMatcherV2::default());
-        let sources: Vec<Box<dyn Source + Send + Sync>> =
-            Self::load_sources(&config.sources);
+        let sources: Vec<Box<dyn Source + Send + Sync>> = Self::load_sources(&config.sources);
         let sources = sources
             .into_iter()
             .map(|s| (s.name().to_string(), s))
@@ -160,7 +162,7 @@ impl Os {
             sources,
             config,
         };
-        config.wrap_init_sources();
+        config.init_sources();
         config
     }
 }

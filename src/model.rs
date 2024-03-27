@@ -50,6 +50,7 @@ pub enum SelectAction {
     Run(String),
     RunInTerminal(String),
     CopyToClipboard(ClipboardContent),
+    OpenUrl(String),
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]

@@ -157,7 +157,6 @@ impl Source for ApplicationsSource {
                     layer: crate::model::ItemLayer::Middle,
                 }
             })
-            .filter(|item| item.score > 0 || query.is_empty())
             .collect()
     }
 }

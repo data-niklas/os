@@ -20,6 +20,9 @@ pub use cliphist::*;
 mod systemctl;
 pub use systemctl::*;
 
+mod linkding;
+pub use linkding::*;
+
 pub trait Source {
     fn name(&self) -> &'static str;
     fn init(&mut self, config: &toml::Table);
