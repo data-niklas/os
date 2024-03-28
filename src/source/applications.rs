@@ -1,47 +1,51 @@
 use super::Source;
+use crate::helpers::Helpers;
 use crate::model::ImmutablePixbuf;
 use freedesktop_desktop_entry::{default_paths, DesktopEntry, Iter, PathSource};
 use freedesktop_icon_lookup::Cache;
 use rayon::prelude::*;
 use relm4::gtk::gdk_pixbuf::Pixbuf;
 use serde::de::value::MapDeserializer;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::time::Duration;
 use std::{
     borrow::Cow,
     fs,
     path::{Path, PathBuf},
 };
 
-use serde::Deserialize;
-
 const fn _default_icons() -> bool {
     true
+}
+fn _default_cache_duration() -> Duration {
+    // 24 hours
+    Duration::from_secs(60 * 60 * 4)
 }
 
 #[derive(Deserialize)]
 pub struct ApplicationsConfig {
     #[serde(default = "_default_icons")]
     pub icons: bool,
+    #[serde(default = "_default_cache_duration")]
+    pub cache_duration: Duration,
 }
 
-#[derive(Clone)]
-pub struct ParsedDesktopEntry {
-    pub name: String,
-    pub description: String,
-    pub icon: Option<ImmutablePixbuf>,
-    pub exec: String,
-    pub terminal: bool,
+#[derive(Serialize, Deserialize)]
+struct LoadedDesktopEntry {
+    name: String,
+    description: String,
+    icon: Option<PathBuf>,
+    exec: String,
+    terminal: bool,
 }
 
-impl ParsedDesktopEntry {
-    fn lookup_icon(icon: &str, cache: &Cache) -> Option<PathBuf> {
-        let path = Path::new(icon);
-        if path.exists() {
-            return Some(path.to_path_buf());
-        }
-        cache.lookup(icon, None)
-    }
+#[derive(Serialize, Deserialize)]
+struct LoadedDesktopEntries {
+    entries: Vec<LoadedDesktopEntry>,
+}
 
+impl LoadedDesktopEntry {
     pub fn from_desktop_entry(entry: DesktopEntry, cache: &Cache, icons: bool) -> Option<Self> {
         if entry.exec().is_none() {
             return None;
@@ -57,24 +61,54 @@ impl ParsedDesktopEntry {
             .trim()
             .to_string();
         let exec = entry.exec().unwrap().to_string();
-        let icon = if icons {
-            entry
-                .icon()
-                .and_then(|icon| Self::lookup_icon(&icon, cache))
-                .map(|icon_path| icon_path)
-                .map(|icon_path| Pixbuf::from_file(icon_path).map(ImmutablePixbuf::new).ok())
-                .unwrap_or(None)
-        } else {
-            None
-        };
+        let icon = entry
+            .icon()
+            .and_then(|icon| LoadedDesktopEntry::lookup_icon(&icon, cache));
+
         let terminal = entry.terminal();
-        Some(ParsedDesktopEntry {
+        Some(LoadedDesktopEntry {
             name,
             description,
             icon,
             exec,
             terminal,
         })
+    }
+
+    fn lookup_icon(icon: &str, cache: &Cache) -> Option<PathBuf> {
+        let path = Path::new(icon);
+        if path.exists() {
+            return Some(path.to_path_buf());
+        }
+        cache.lookup(icon, None)
+    }
+}
+
+#[derive(Clone)]
+pub struct ParsedDesktopEntry {
+    pub name: String,
+    pub description: String,
+    pub icon: Option<ImmutablePixbuf>,
+    pub exec: String,
+    pub terminal: bool,
+}
+
+impl ParsedDesktopEntry {
+    fn from_loaded(entry: LoadedDesktopEntry, icons: bool) -> Self {
+        let icon = if icons {
+            entry
+                .icon
+                .and_then(|icon_path| Pixbuf::from_file(icon_path).map(ImmutablePixbuf::new).ok())
+        } else {
+            None
+        };
+        Self {
+            name: entry.name,
+            description: entry.description,
+            icon,
+            exec: entry.exec,
+            terminal: entry.terminal,
+        }
     }
 }
 
@@ -93,14 +127,26 @@ impl Source for ApplicationsSource {
         "applications"
     }
 
-    fn init(&mut self, config: &toml::Table) {
+    fn init(&mut self, config: &toml::Table, helpers: &Helpers) {
         let config: ApplicationsConfig = config.clone().try_into().unwrap();
+        let cache_duration = config.cache_duration;
+
+        if !helpers.cache_expired(self.name(), cache_duration) {
+            let entries: LoadedDesktopEntries = helpers.read_cache(self.name()).unwrap();
+            self.entries = entries
+                .entries
+                .into_iter()
+                .map(|entry| ParsedDesktopEntry::from_loaded(entry, config.icons))
+                .collect();
+            return;
+        }
+
         let mut cache = Cache::new().unwrap();
         cache
             .load_default()
             .expect("Failed to load default icon cache");
         let paths = default_paths();
-        let parsed_entries: Vec<ParsedDesktopEntry> = Iter::new(paths)
+        let loaded_entries: Vec<LoadedDesktopEntry> = Iter::new(paths)
             .par_bridge()
             .filter_map(|path| {
                 let path_src = PathSource::guess_from(&path);
@@ -110,11 +156,20 @@ impl Source for ApplicationsSource {
                         return None;
                     }
                     let entry = entry.unwrap();
-                    ParsedDesktopEntry::from_desktop_entry(entry, &cache, config.icons)
+                    LoadedDesktopEntry::from_desktop_entry(entry, &cache, config.icons)
                 } else {
                     None
                 }
             })
+            .collect();
+        let loaded_entries = LoadedDesktopEntries {
+            entries: loaded_entries,
+        };
+        helpers.write_cache(self.name(), &loaded_entries);
+        let parsed_entries: Vec<ParsedDesktopEntry> = loaded_entries
+            .entries
+            .into_iter()
+            .map(|entry| ParsedDesktopEntry::from_loaded(entry, config.icons))
             .collect();
         self.entries = parsed_entries;
     }

@@ -1,3 +1,4 @@
+use crate::helpers::Helpers;
 use crate::history::History;
 use crate::model::SearchItem;
 use crate::opts::Config;
@@ -21,6 +22,7 @@ pub struct Os {
     sources: HashMap<String, Box<dyn Source + Send + Sync>>,
     pub config: Config,
     history: History,
+    helpers: Helpers,
 }
 
 impl Os {
@@ -45,9 +47,9 @@ impl Os {
         self.sources.par_iter_mut().for_each(|(_, source)| {
             let source_name = source.name();
             if let Some(config) = self.config.source.get(source_name) {
-                source.init(config);
+                source.init(config, &self.helpers);
             } else {
-                source.init(&toml::Table::new());
+                source.init(&toml::Table::new(), &self.helpers);
             }
         });
     }
@@ -161,6 +163,7 @@ impl Os {
             matcher,
             sources,
             config,
+            helpers: Helpers::default(),
         };
         config.init_sources();
         config

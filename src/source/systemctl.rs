@@ -1,3 +1,4 @@
+use crate::helpers::Helpers;
 use crate::model::{SearchItem, SelectAction};
 use crate::source::{stdin, Source};
 use fuzzy_matcher::FuzzyMatcher;
@@ -31,7 +32,7 @@ impl Source for SystemctlSource {
         "systemctl"
     }
 
-    fn init(&mut self, config: &toml::Table) {}
+    fn init(&mut self, config: &toml::Table, helpers: &Helpers) {}
 
     fn deinit(&mut self) {}
 

@@ -1,3 +1,4 @@
+use crate::helpers::Helpers;
 use crate::model::{SearchItem, SelectAction};
 use crate::source::Source;
 use fuzzy_matcher::FuzzyMatcher;
@@ -17,7 +18,7 @@ impl Source for ZoxideSource {
         "zoxide"
     }
 
-    fn init(&mut self, config: &toml::Table) {}
+    fn init(&mut self, config: &toml::Table, helpers: &Helpers) {}
 
     fn deinit(&mut self) {}
 

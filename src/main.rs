@@ -5,6 +5,7 @@ mod ui;
 mod model;
 mod source;
 mod history;
+mod helpers;
 
 pub const APP_NAME: &str = env!("CARGO_PKG_NAME");
 pub const APPLICATION_ID: &str = "sh.data-niklas.os";

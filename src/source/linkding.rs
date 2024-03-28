@@ -1,16 +1,23 @@
+use crate::helpers::Helpers;
 use crate::model::{SearchItem, SelectAction};
 use crate::source::Source;
 use fuzzy_matcher::FuzzyMatcher;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::process::Command;
+use std::time::Duration;
 use ureq::get;
 
 fn _default_limit() -> u32 {
     100
 }
 
-#[derive(Deserialize)]
+fn _default_cache_duration() -> Duration {
+    // 24 hours
+    Duration::from_secs(60 * 60 * 24)
+}
+
+#[derive(Deserialize, Serialize)]
 struct Bookmark {
     id: u32,
     url: String,
@@ -28,7 +35,7 @@ struct Bookmark {
     date_modified: String,
 }
 
-#[derive(Deserialize)]
+#[derive(Serialize, Deserialize)]
 struct Bookmarks {
     count: u32,
     next: Option<String>,
@@ -42,6 +49,8 @@ pub struct LinkdingConfig {
     pub host: String,
     #[serde(default = "_default_limit")]
     pub limit: u32,
+    #[serde(default = "_default_cache_duration")]
+    pub cache_duration: Duration,
 }
 
 pub struct LinkdingSource {
@@ -59,9 +68,15 @@ impl Source for LinkdingSource {
         "linkding"
     }
 
-    fn init(&mut self, config: &toml::Table) {
+    fn init(&mut self, config: &toml::Table, helpers: &Helpers) {
         let config: LinkdingConfig = config.clone().try_into().unwrap();
         let limit = config.limit;
+        let cache_duration = config.cache_duration;
+        if !helpers.cache_expired(self.name(), cache_duration) {
+            let bookmarks: Bookmarks = helpers.read_cache(self.name()).unwrap();
+            self.bookmarks = bookmarks.results;
+            return;
+        }
         let bookmarks_url = format!("{}/api/bookmarks/?limit={}", config.host, limit);
         let bookmarks: Bookmarks = get(&bookmarks_url)
             .set("Authorization", &format!("Token {}", config.api_key))
@@ -69,6 +84,7 @@ impl Source for LinkdingSource {
             .expect("Failed to fetch bookmarks")
             .into_json()
             .expect("Failed to parse bookmarks");
+        helpers.write_cache(self.name(), &bookmarks);
         self.bookmarks = bookmarks.results;
     }
 

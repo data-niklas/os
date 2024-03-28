@@ -1,3 +1,4 @@
+use crate::helpers::Helpers;
 use crate::model::{SearchItem, SelectAction};
 use crate::source::{stdin, Source};
 use atty;
@@ -20,7 +21,7 @@ impl Source for StdinSource {
         "stdin"
     }
 
-    fn init(&mut self, config: &toml::Table) {
+    fn init(&mut self, config: &toml::Table, helpers: &Helpers) {
         if atty::is(atty::Stream::Stdin) {
             return;
         }

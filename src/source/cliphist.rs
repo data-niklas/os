@@ -1,3 +1,4 @@
+use crate::helpers::Helpers;
 use crate::model::ImmutablePixbuf;
 use crate::model::{ClipboardContent, SearchItem, SelectAction};
 use crate::source::Source;
@@ -89,7 +90,7 @@ impl Source for CliphistSource {
         "cliphist"
     }
 
-    fn init(&mut self, config: &toml::Table) {
+    fn init(&mut self, config: &toml::Table, helpers: &Helpers) {
         let config: CliphistConfig = config.clone().try_into().unwrap();
         let xdg = BaseDirectories::with_prefix("cliphist").unwrap();
         let db_path = xdg.place_cache_file("db").unwrap();

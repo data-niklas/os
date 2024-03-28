@@ -1,3 +1,4 @@
+use crate::helpers::Helpers;
 use crate::model::SearchItem;
 use fuzzy_matcher::FuzzyMatcher;
 use std::collections::HashMap;
@@ -25,7 +26,7 @@ pub use linkding::*;
 
 pub trait Source {
     fn name(&self) -> &'static str;
-    fn init(&mut self, config: &toml::Table);
+    fn init(&mut self, config: &toml::Table, helpers: &Helpers);
     fn deinit(&mut self);
     fn search(&self, query: &str, matcher: &Box<dyn FuzzyMatcher + Send + Sync>)
         -> Vec<SearchItem>;
