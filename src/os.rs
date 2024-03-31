@@ -2,7 +2,6 @@ use crate::helpers::Helpers;
 use crate::history::History;
 use crate::model::SearchItem;
 use crate::opts::Config;
-use crate::plugin::Plugin;
 
 #[cfg(feature = "cliphist")]
 use crate::source::CliphistSource;

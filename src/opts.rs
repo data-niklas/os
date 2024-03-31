@@ -39,18 +39,9 @@ fn default_terminal() -> String {
 
 #[derive(ClapSerde, Deserialize, Debug)]
 pub struct Config {
-    /// String argument
-    #[serde(default)]
-    #[clap(long)]
-    pub plugins: Vec<String>,
-
     #[default("gtk".to_string())]
     #[clap(short, long)]
     pub ui: String,
-
-    #[serde(default)]
-    #[clap(skip)]
-    pub plugin: HashMap<String, HashMap<String, toml::Value>>,
 
     #[serde(default)]
     #[clap(skip)]
