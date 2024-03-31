@@ -3,7 +3,6 @@ mod history;
 mod model;
 mod opts;
 mod os;
-mod plugin;
 mod source;
 mod ui;
 

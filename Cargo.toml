@@ -10,7 +10,7 @@ default = []
 unix = []
 wayland = ["dep:gtk4-layer-shell", "unix"]
 
-cliphist = ["wayland", "dep:nut"]
+cliphist = ["wayland", "dep:nut", "dep:ahash"]
 linkding = ["dep:ureq"]
 
 [dependencies]
@@ -27,7 +27,6 @@ xdg = "2.5.2"
 clap = {version = "4.5.1", features = ["env", "derive", "string"]}
 clap-serde-derive = "0.2.1"
 serde = {version="1.0.197", features=["derive"]}
-sharedlib = "7.0.0"
 fuzzy-matcher = "0.3.7"
 freedesktop-icon-lookup = "0.1.3"
 freedesktop-desktop-entry = "0.5.1"
@@ -36,7 +35,7 @@ atty = "0.2.14"
 rusqlite = "0.31.0"
 chrono = "0.4.35"
 nut = {version="0.1.3", optional=true}
-ahash = "0.8.11"
+ahash = {version="0.8.11", optional=true}
 rayon = "1.10.0"
 # Needs wl-copy
 ratatui = "0.26.1"

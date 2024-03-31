@@ -23,7 +23,6 @@ use rayon::prelude::*;
 use log::warn;
 
 pub struct Os {
-    plugins: Vec<Plugin>,
     matcher: Box<dyn FuzzyMatcher + Send + Sync>,
     sources: HashMap<String, Box<dyn Source + Send + Sync>>,
     pub config: Config,
@@ -32,22 +31,6 @@ pub struct Os {
 }
 
 impl Os {
-    fn load_plugins(_plugin_config: &HashMap<String, HashMap<String, toml::Value>>) -> Vec<Plugin> {
-        let xdg_dirs = BaseDirectories::with_prefix(APP_NAME).unwrap();
-        xdg_dirs
-            .get_config_dirs()
-            .into_iter()
-            .map(|config_directory| {
-                let plugins_directory = config_directory.join("plugins");
-                if plugins_directory.exists() {
-                    vec![]
-                } else {
-                    vec![]
-                }
-            })
-            .flatten()
-            .collect()
-    }
 
     fn init_sources(&mut self) {
         self.sources.par_iter_mut().for_each(|(_, source)| {
@@ -139,7 +122,6 @@ impl Os {
     fn load_sources(enabled_sources: &Vec<String>) -> Vec<Box<dyn Source + Send + Sync>> {
         let mut sources: Vec<Box<dyn Source + Send + Sync>> = vec![];
         for name in enabled_sources {
-            // TODO: use registered name
             match name.as_str() {
                 "stdin" => sources.push(Box::new(StdinSource::new())),
                 "hstr" => sources.push(Box::new(HstrSource::new())),
@@ -151,7 +133,7 @@ impl Os {
                 #[cfg(feature = "linkding")]
                 "linkding" => sources.push(Box::new(LinkdingSource::new())),
                 _ => {
-                    warn!("The source could not be found");
+                    warn!("No source '{name}'");
                 }
             }
         }
@@ -160,7 +142,6 @@ impl Os {
     }
 
     pub fn new(config: Config) -> Self {
-        let plugins = Os::load_plugins(&config.plugin);
         let matcher = Box::new(SkimMatcherV2::default());
         let sources: Vec<Box<dyn Source + Send + Sync>> = Self::load_sources(&config.sources);
         let sources = sources
@@ -169,7 +150,6 @@ impl Os {
             .collect();
         let mut config = Self {
             history: History::new(),
-            plugins,
             matcher,
             sources,
             config,
