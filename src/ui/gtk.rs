@@ -5,21 +5,15 @@ use crate::os::Os;
 use crate::ui::UI;
 use crate::APPLICATION_ID;
 use gtk::prelude::*;
-use gtk::{SearchEntry};
+use gtk::SearchEntry;
 #[cfg(feature = "wayland")]
 use gtk4_layer_shell::{Edge, Layer, LayerShell};
 
-
-
 use relm4::gtk::gdk::Key;
-
 
 use relm4::gtk::glib::Propagation;
 
-
-use relm4::gtk::{
-    Align, EventControllerKey, Justification, PolicyType,
-};
+use relm4::gtk::{Align, EventControllerKey, Justification, PolicyType};
 use relm4::{
     prelude::*,
     typed_view::list::{RelmListItem, TypedListView},
@@ -63,6 +57,7 @@ impl RelmListItem for SearchItem {
         widgets.subtitle.set_visible(self.subtitle.is_some());
 
         if let Some(title) = &self.title {
+            // TODO: use variable from ui.gtk.char width
             let title: String = title.chars().take(50).collect();
             widgets.title.set_label(&title);
         }
@@ -107,6 +102,7 @@ impl RelmListItem for SearchItem {
                         set_justify: Justification::Left,
                         set_hexpand: true,
                         set_halign: Align::Start,
+                        set_wrap: false,
                     },
                     #[name="image"]
                     gtk::Image {
@@ -117,9 +113,8 @@ impl RelmListItem for SearchItem {
                         set_justify: Justification::Left,
                         set_hexpand: true,
                         set_halign: Align::Start,
+                        set_wrap: false,
                         set_attributes: Some({
-
-
                             &attr_list
                         }),
                     },

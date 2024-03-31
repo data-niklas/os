@@ -59,7 +59,7 @@ pub struct Config {
     #[clap(short, long)]
     pub terminal: String,
 
-    #[default(50)]
+    #[default(100)]
     #[clap(short, long)]
     pub maximum_list_item_count: usize,
 }
