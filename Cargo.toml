@@ -5,11 +5,15 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[features]
+default = []
+wayland = ["dep:gtk4-layer-shell"]
+
 [dependencies]
 toml = "0.8.11"
 
 relm4 = "0.7.1"
-gtk4-layer-shell = "0.2.0"
+gtk4-layer-shell = {version="0.2.0", optional = true}
 
 xdg = "2.5.2"
 

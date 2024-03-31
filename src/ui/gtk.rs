@@ -6,6 +6,7 @@ use crate::ui::UI;
 use crate::APPLICATION_ID;
 use gtk::prelude::*;
 use gtk::{Application, ApplicationWindow, Button, Entry, SearchEntry};
+#[cfg(feature = "wayland")]
 use gtk4_layer_shell::{Edge, Layer, LayerShell};
 use relm4::gtk::cairo::FontOptions;
 use relm4::gtk::ffi::{GtkBox, GtkImage};
@@ -174,11 +175,8 @@ impl SimpleComponent for GtkApp {
     type Output = ();
 
     view! {
+        #[name="window"]
         gtk::Window {
-            init_layer_shell: (),
-            set_keyboard_mode: gtk4_layer_shell::KeyboardMode::OnDemand,
-            set_layer: Layer::Overlay,
-            auto_exclusive_zone_enable: (),
 
             set_default_size: (400, 400),
             gtk::Box {
@@ -246,6 +244,15 @@ impl SimpleComponent for GtkApp {
         let search_items: TypedListView<SearchItem, gtk::SingleSelection> = TypedListView::new();
         let search_items_box = &search_items.view;
         let widgets = view_output!();
+        #[cfg(feature = "wayland")]
+        {
+            widgets.window.init_layer_shell();
+            widgets
+                .window
+                .set_keyboard_mode(gtk4_layer_shell::KeyboardMode::OnDemand);
+            widgets.window.set_layer(Layer::Overlay);
+            widgets.window.auto_exclusive_zone_enable();
+        };
         let search_entry = widgets.search_entry.clone();
         search_entry.set_placeholder_text(Some(&prompt));
         let mut model = GtkApp {
