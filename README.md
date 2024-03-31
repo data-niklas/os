@@ -5,19 +5,23 @@ A universal search engine. Image your browser URL bar search, but global and ext
 - Plugins: Extend the search sources
 - Different UI backends: Wayland layer / CLI
 
+## Current sources
+- Applications: Launch linux applications using the XDG specification
+- Systemctl: Shutdown / Reboot / Suspend your PC
+
+- Cliphist: Display your recent clipboard entries using cliphist
+
 ## Roadmap
-- [ ] Default search source (dmenu like search)
-- [ ] Configuration from `.toml`
-- [ ] CLI arguments to enable / disable sources
-- [ ] Different result components:
-    - [ ] Text with (optional) icon
-    - [ ] Image
-- [ ] Result caching (e.g.) for web searches
-- [ ] History
-- [ ] Plugins
-    - [ ] Async initialization (so that they can index files, etc.)
-    - [ ] Getting entries async
+- [X] Default search source (dmenu like search)
+- [X] Configuration from `.toml`
+- [X] CLI arguments to enable / disable sources
+- [X] Different result components:
+    - [X] Text with (optional) icon
+    - [X] Image
+- [X] Result caching (e.g.) for web searches
+- [X] History
 - [ ] Logging
+
 
 ## FAQ
 - Q: Why the short name `os`, it sounds like operating system?

@@ -1,15 +1,6 @@
-// use clap::{Args as ClapArgs,Parser};
 use crate::APP_NAME;
-use clap_serde_derive::{
-    clap,
-    clap::Parser,
-    serde::Deserialize,
-    ClapSerde,
-};
-use std::{
-    collections::HashMap,
-    path::{PathBuf},
-};
+use clap_serde_derive::{clap, clap::Parser, serde::Deserialize, ClapSerde};
+use std::{collections::HashMap, path::PathBuf};
 
 use xdg::BaseDirectories;
 
@@ -79,7 +70,7 @@ pub struct Config {
 
     #[default(50)]
     #[clap(short, long)]
-    pub maximum_list_item_count: usize
+    pub maximum_list_item_count: usize,
 }
 
 impl Config {
