@@ -10,11 +10,11 @@ use crate::source::LinkdingSource;
 use crate::source::{
     ApplicationsSource, HstrSource, Source, StdinSource, SystemctlSource, ZoxideSource,
 };
-use crate::APP_NAME;
+
 use shlex::{self, Shlex};
 use std::collections::HashMap;
 use std::process::Command;
-use xdg::BaseDirectories;
+
 
 use fuzzy_matcher::{skim::SkimMatcherV2, FuzzyMatcher};
 use rayon::prelude::*;
