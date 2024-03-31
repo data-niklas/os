@@ -5,9 +5,9 @@ use freedesktop_desktop_entry::{default_paths, DesktopEntry, Iter, PathSource};
 use freedesktop_icon_lookup::Cache;
 use rayon::prelude::*;
 use relm4::gtk::gdk_pixbuf::Pixbuf;
-use serde::de::value::MapDeserializer;
+
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+
 use std::time::Duration;
 use std::{
     borrow::Cow,
@@ -46,7 +46,7 @@ struct LoadedDesktopEntries {
 }
 
 impl LoadedDesktopEntry {
-    pub fn from_desktop_entry(entry: DesktopEntry, cache: &Cache, icons: bool) -> Option<Self> {
+    pub fn from_desktop_entry(entry: DesktopEntry, cache: &Cache, _icons: bool) -> Option<Self> {
         if entry.exec().is_none() {
             return None;
         }
@@ -149,7 +149,7 @@ impl Source for ApplicationsSource {
         let loaded_entries: Vec<LoadedDesktopEntry> = Iter::new(paths)
             .par_bridge()
             .filter_map(|path| {
-                let path_src = PathSource::guess_from(&path);
+                let _path_src = PathSource::guess_from(&path);
                 if let Ok(bytes) = fs::read_to_string(&path) {
                     let entry = DesktopEntry::decode(&path, &bytes);
                     if entry.is_err() {

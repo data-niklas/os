@@ -5,25 +5,22 @@ use crate::os::Os;
 use crate::ui::UI;
 use crate::APPLICATION_ID;
 use gtk::prelude::*;
-use gtk::{Application, ApplicationWindow, Button, Entry, SearchEntry};
+use gtk::{SearchEntry};
 #[cfg(feature = "wayland")]
 use gtk4_layer_shell::{Edge, Layer, LayerShell};
-use relm4::gtk::cairo::FontOptions;
-use relm4::gtk::ffi::{GtkBox, GtkImage};
-use relm4::gtk::gdk::ffi::GdkMemoryTexture;
+
+
+
 use relm4::gtk::gdk::Key;
-use relm4::gtk::gdk_pixbuf::{Colorspace, PixbufLoader};
-use relm4::gtk::glib::translate::FromGlibPtrFull;
+
+
 use relm4::gtk::glib::Propagation;
-use relm4::gtk::pango::ffi::{PangoAttrFontDesc, PangoFontDescription};
-use relm4::gtk::pango::FontScale;
+
+
 use relm4::gtk::{
-    Align, EventControllerKey, Justification, Label, ListView, Overflow, PolicyType,
-    ScrollablePolicy, ScrolledWindow,
+    Align, EventControllerKey, Justification, PolicyType,
 };
 use relm4::{
-    factory::FactoryVecDeque,
-    gtk::{gdk::KeyEvent, gdk_pixbuf::Pixbuf, glib::RustClosure, Window},
     prelude::*,
     typed_view::list::{RelmListItem, TypedListView},
 };
@@ -60,7 +57,7 @@ impl RelmListItem for SearchItem {
     type Root = gtk::Box;
     type Widgets = SearchItemWidgets;
 
-    fn bind(&mut self, widgets: &mut Self::Widgets, root: &mut Self::Root) {
+    fn bind(&mut self, widgets: &mut Self::Widgets, _root: &mut Self::Root) {
         widgets.title.set_visible(self.title.is_some());
         widgets.image.set_visible(self.image.is_some());
         widgets.subtitle.set_visible(self.subtitle.is_some());
@@ -84,9 +81,9 @@ impl RelmListItem for SearchItem {
         }
     }
 
-    fn setup(list_item: &gtk::ListItem) -> (Self::Root, Self::Widgets) {
+    fn setup(_list_item: &gtk::ListItem) -> (Self::Root, Self::Widgets) {
         let attr_list = relm4::gtk::pango::AttrList::new();
-        let mut attr = relm4::gtk::pango::AttrFloat::new_scale(0.8);
+        let attr = relm4::gtk::pango::AttrFloat::new_scale(0.8);
         attr_list.insert(attr);
         relm4::view! {
             my_box = gtk::Box {
@@ -196,7 +193,7 @@ impl SimpleComponent for GtkApp {
                     add_controller: {
                         let sender2 = sender.clone();
                         let keys = EventControllerKey::new();
-                        keys.connect_key_pressed(move |_, keyval, keycode, state| {
+                        keys.connect_key_pressed(move |_, keyval, _keycode, _state| {
                             match keyval {
                                 Key::Escape => {
                                     os_for_key_pressed.borrow_mut().run_select_action(crate::model::SelectAction::Exit);
@@ -264,7 +261,7 @@ impl SimpleComponent for GtkApp {
         ComponentParts { model, widgets }
     }
 
-    fn update(&mut self, message: Self::Input, sender: ComponentSender<Self>) {
+    fn update(&mut self, message: Self::Input, _sender: ComponentSender<Self>) {
         match message {
             Msg::Search(query) => {
                 self.search(&query);

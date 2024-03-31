@@ -3,7 +3,7 @@ use crate::{model::SearchItem, os::Os};
 use crossterm::event::{Event, KeyEventKind};
 use crossterm::{event, execute, terminal::*};
 use ratatui::prelude::*;
-use ratatui::widgets::{Block, Borders, ListItem, Paragraph, Scrollbar, ScrollbarState};
+use ratatui::widgets::{Block, Borders, Paragraph, Scrollbar, ScrollbarState};
 use relm4::gtk::prelude::ListItemExt;
 use std::io;
 use std::io::{stdout, Stdout};
@@ -179,7 +179,7 @@ struct TuiSearchItem {
 }
 
 impl ListableWidget for TuiSearchItem {
-    fn size(&self, scroll_direction: &tui_widget_list::ScrollAxis) -> usize {
+    fn size(&self, _scroll_direction: &tui_widget_list::ScrollAxis) -> usize {
         3
     }
     fn highlight(self) -> Self

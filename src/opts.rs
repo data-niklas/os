@@ -10,7 +10,7 @@ use std::{
     collections::HashMap,
     path::{PathBuf},
 };
-use toml::Value;
+
 use xdg::BaseDirectories;
 
 #[derive(Parser)]

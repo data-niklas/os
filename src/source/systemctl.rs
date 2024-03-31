@@ -1,9 +1,9 @@
 use crate::helpers::Helpers;
 use crate::model::{SearchItem, SelectAction};
-use crate::source::{stdin, Source};
+use crate::source::{Source};
 use fuzzy_matcher::FuzzyMatcher;
-use std::collections::HashMap;
-use std::io::{stdin, Read};
+
+
 
 pub struct SystemctlSource {
     items: Vec<(String, String, String)>,
@@ -32,7 +32,7 @@ impl Source for SystemctlSource {
         "systemctl"
     }
 
-    fn init(&mut self, config: &toml::Table, helpers: &Helpers) {}
+    fn init(&mut self, _config: &toml::Table, _helpers: &Helpers) {}
 
     fn deinit(&mut self) {}
 

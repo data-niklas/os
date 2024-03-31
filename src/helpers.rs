@@ -1,9 +1,9 @@
 use crate::APP_NAME;
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use serde::{de::DeserializeOwned, Serialize};
 // use serde_json::{from_reader, from_str, to_string};
 use std::{
     path::PathBuf,
-    time::{Duration, Instant, SystemTime},
+    time::{Duration, SystemTime},
 };
 use toml::{from_str, to_string};
 use xdg::BaseDirectories;
