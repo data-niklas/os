@@ -1,7 +1,6 @@
 use crate::helpers::Helpers;
 use crate::model::SearchItem;
 use fuzzy_matcher::FuzzyMatcher;
-use std::collections::HashMap;
 
 mod stdin;
 pub use stdin::*;
@@ -15,14 +14,19 @@ pub use zoxide::*;
 mod hstr;
 pub use hstr::*;
 
+#[cfg(feature = "cliphist")]
 mod cliphist;
+#[cfg(feature = "cliphist")]
 pub use cliphist::*;
 
 mod systemctl;
 pub use systemctl::*;
 
+#[cfg(feature="linkding")]
 mod linkding;
+#[cfg(feature="linkding")]
 pub use linkding::*;
+
 
 pub trait Source {
     fn name(&self) -> &'static str;

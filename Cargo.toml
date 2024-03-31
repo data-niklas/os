@@ -7,9 +7,16 @@ edition = "2021"
 
 [features]
 default = []
-wayland = ["dep:gtk4-layer-shell"]
+unix = []
+wayland = ["dep:gtk4-layer-shell", "unix"]
+
+cliphist = ["wayland", "dep:nut"]
+linkding = ["dep:ureq"]
 
 [dependencies]
+log = "0.4.21"
+env_logger = "0.11.3"
+
 toml = "0.8.11"
 
 relm4 = "0.7.1"
@@ -28,7 +35,7 @@ shlex = "1.3.0"
 atty = "0.2.14"
 rusqlite = "0.31.0"
 chrono = "0.4.35"
-nut = "0.1.3"
+nut = {version="0.1.3", optional=true}
 ahash = "0.8.11"
 rayon = "1.10.0"
 # Needs wl-copy
@@ -36,4 +43,4 @@ ratatui = "0.26.1"
 tui-widget-list = "0.8.2"
 tui-input = "0.8.0"
 crossterm = "0.27.0"
-ureq = {version="2.9.6", features=["json"]}
+ureq = {version="2.9.6", features=["json"], optional=true}

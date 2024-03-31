@@ -3,9 +3,13 @@ use crate::history::History;
 use crate::model::SearchItem;
 use crate::opts::Config;
 use crate::plugin::Plugin;
+
+#[cfg(feature = "cliphist")]
+use crate::source::CliphistSource;
+#[cfg(feature = "linkding")]
+use crate::source::LinkdingSource;
 use crate::source::{
-    ApplicationsSource, CliphistSource, HstrSource, LinkdingSource, Source, StdinSource,
-    SystemctlSource, ZoxideSource,
+    ApplicationsSource, HstrSource, Source, StdinSource, SystemctlSource, ZoxideSource,
 };
 use crate::APP_NAME;
 use shlex::{self, Shlex};
@@ -15,6 +19,8 @@ use xdg::BaseDirectories;
 
 use fuzzy_matcher::{skim::SkimMatcherV2, FuzzyMatcher};
 use rayon::prelude::*;
+
+use log::warn;
 
 pub struct Os {
     plugins: Vec<Plugin>,
@@ -26,7 +32,7 @@ pub struct Os {
 }
 
 impl Os {
-    fn load_plugins(plugin_config: &HashMap<String, HashMap<String, toml::Value>>) -> Vec<Plugin> {
+    fn load_plugins(_plugin_config: &HashMap<String, HashMap<String, toml::Value>>) -> Vec<Plugin> {
         let xdg_dirs = BaseDirectories::with_prefix(APP_NAME).unwrap();
         xdg_dirs
             .get_config_dirs()
@@ -137,12 +143,16 @@ impl Os {
             match name.as_str() {
                 "stdin" => sources.push(Box::new(StdinSource::new())),
                 "hstr" => sources.push(Box::new(HstrSource::new())),
+                #[cfg(feature = "cliphist")]
                 "cliphist" => sources.push(Box::new(CliphistSource::new())),
                 "zoxide" => sources.push(Box::new(ZoxideSource::new())),
                 "applications" => sources.push(Box::new(ApplicationsSource::new())),
                 "systemctl" => sources.push(Box::new(SystemctlSource::new())),
+                #[cfg(feature = "linkding")]
                 "linkding" => sources.push(Box::new(LinkdingSource::new())),
-                _ => {}
+                _ => {
+                    warn!("The source could not be found");
+                }
             }
         }
 

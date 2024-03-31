@@ -2,13 +2,13 @@
 use crate::APP_NAME;
 use clap_serde_derive::{
     clap,
-    clap::{builder::OsStr, ArgAction, Parser},
-    serde::{Deserialize, Serialize},
+    clap::Parser,
+    serde::Deserialize,
     ClapSerde,
 };
 use std::{
     collections::HashMap,
-    path::{Path, PathBuf},
+    path::{PathBuf},
 };
 use toml::Value;
 use xdg::BaseDirectories;
