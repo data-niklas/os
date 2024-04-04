@@ -27,6 +27,11 @@ mod linkding;
 #[cfg(feature="linkding")]
 pub use linkding::*;
 
+#[cfg(feature="duckduckgo")]
+mod duckduckgo;
+#[cfg(feature="duckduckgo")]
+pub use duckduckgo::*;
+
 
 pub trait Source {
     fn name(&self) -> &'static str;

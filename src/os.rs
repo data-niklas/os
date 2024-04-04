@@ -7,6 +7,10 @@ use crate::opts::Config;
 use crate::source::CliphistSource;
 #[cfg(feature = "linkding")]
 use crate::source::LinkdingSource;
+
+#[cfg(feature = "duckduckgo")]
+use crate::source::DuckduckgoSource;
+
 use crate::source::{
     ApplicationsSource, HstrSource, Source, StdinSource, SystemctlSource, ZoxideSource,
 };
@@ -131,6 +135,8 @@ impl Os {
                 "systemctl" => sources.push(Box::new(SystemctlSource::new())),
                 #[cfg(feature = "linkding")]
                 "linkding" => sources.push(Box::new(LinkdingSource::new())),
+                #[cfg(feature = "duckduckgo")]
+                "linkding" => sources.push(Box::new(DuckduckgoSource::new())),
                 _ => {
                     warn!("No source '{name}'");
                 }

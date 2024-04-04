@@ -12,6 +12,7 @@ wayland = ["dep:gtk4-layer-shell", "unix"]
 
 cliphist = ["wayland", "dep:nut", "dep:ahash"]
 linkding = ["dep:ureq"]
+duckduckgo = ["dep:ureq", "dep:scraper"]
 
 [dependencies]
 log = "0.4.21"
@@ -43,3 +44,4 @@ tui-widget-list = "0.8.2"
 tui-input = "0.8.0"
 crossterm = "0.27.0"
 ureq = {version="2.9.6", features=["json"], optional=true}
+scraper = {version="0.19.0", optional=true}
