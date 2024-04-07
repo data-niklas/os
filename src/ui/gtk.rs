@@ -286,19 +286,19 @@ impl SimpleComponent for GtkApp {
                 self.search_entry.grab_focus();
             }
             Msg::Select => {
-                let selection = &self.search_items.selection_model;
-                let selected = selection.selected();
-                if selected >= selection.n_items() {
-                    return;
-                }
-                let selected = self.search_items.get(selected).unwrap();
-                let item = selected.borrow();
+                let item = {
+                    let selection = &self.search_items.selection_model;
+                    let selected = selection.selected();
+                    if selected >= selection.n_items() {
+                        return;
+                    }
+                    self.search_items.get(selected).unwrap()
+                };
                 let mut os_borrow = self.os.borrow_mut();
-                if os_borrow.select(&item) {
+                if os_borrow.select(&item.borrow()) {
                     os_borrow.deinit();
                     std::process::exit(0);
-                }
-                else {
+                } else {
                     self.search_entry.set_text("");
                     self.search_items.clear();
                 }

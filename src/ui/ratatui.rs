@@ -152,8 +152,7 @@ impl RatatuiUI {
                         if app.os.select(item) {
                             app.os.deinit();
                             std::process::exit(0);
-                        }
-                        else {
+                        } else {
                             app.input.reset();
                             app.items.clear();
                         }

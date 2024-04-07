@@ -141,7 +141,7 @@ impl Os {
                 #[cfg(feature = "linkding")]
                 "linkding" => sources.push(Box::new(LinkdingSource::new())),
                 #[cfg(feature = "duckduckgo")]
-                "linkding" => sources.push(Box::new(DuckduckgoSource::new())),
+                "duckduckgo" => sources.push(Box::new(DuckduckgoSource::new())),
                 _ => {
                     warn!("No source '{name}'");
                 }
