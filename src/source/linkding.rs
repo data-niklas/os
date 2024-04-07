@@ -1,5 +1,5 @@
 use crate::helpers::Helpers;
-use crate::model::{SearchItem, SelectAction};
+use crate::model::SearchItem;
 use crate::source::Source;
 use fuzzy_matcher::FuzzyMatcher;
 use serde::{Deserialize, Serialize};
@@ -153,7 +153,10 @@ impl Source for LinkdingSource {
                 score,
                 source: self.name(),
                 layer: crate::model::ItemLayer::Middle,
-                action: Box::new(move || SelectAction::OpenUrl(url.clone())),
+                action: Box::new(move |os| {
+                    os.open_url(&url);
+                    true
+                }),
             });
         }
 

@@ -1,5 +1,5 @@
 use crate::helpers::Helpers;
-use crate::model::{SearchItem, SelectAction};
+use crate::model::{SearchItem};
 use crate::source::{Source};
 use fuzzy_matcher::FuzzyMatcher;
 
@@ -61,10 +61,10 @@ impl Source for SystemctlSource {
                     image: None,
                     score,
                     source: self.name(),
-                    action: Box::new(move || {
+                    action: Box::new(move |os| {
                         let command = command.clone();
-
-                        SelectAction::Run("systemctl ".to_string() + &command)
+                        os.run(&format!("systemctl {}", command));
+                        true
                     }),
                     layer: crate::model::ItemLayer::Middle,
                 }

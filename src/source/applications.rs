@@ -196,7 +196,7 @@ impl Source for ApplicationsSource {
                     image: None,
                     score,
                     source: self.name(),
-                    action: Box::new(move || {
+                    action: Box::new(move |os| {
                         let exec = exec.clone();
                         let exec = exec
                             .replace(" %U", "")
@@ -204,10 +204,11 @@ impl Source for ApplicationsSource {
                             .replace(" %F", "")
                             .replace(" %f", "");
                         if terminal {
-                            crate::model::SelectAction::RunInTerminal(exec)
+                            os.run_in_terminal(&exec);
                         } else {
-                            crate::model::SelectAction::Run(exec)
+                            os.run(&exec);
                         }
+                        true
                     }),
                     layer: crate::model::ItemLayer::Middle,
                 }

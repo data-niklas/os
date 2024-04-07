@@ -191,7 +191,7 @@ impl SimpleComponent for GtkApp {
                         keys.connect_key_pressed(move |_, keyval, _keycode, _state| {
                             match keyval {
                                 Key::Escape => {
-                                    os_for_key_pressed.borrow_mut().run_select_action(crate::model::SelectAction::Exit);
+                                    os_for_key_pressed.borrow_mut().deinit();
                                     std::process::exit(0);
                                     Propagation::Stop
                                 },
@@ -293,8 +293,15 @@ impl SimpleComponent for GtkApp {
                 }
                 let selected = self.search_items.get(selected).unwrap();
                 let item = selected.borrow();
-                self.os.borrow_mut().select(&item);
-                std::process::exit(0);
+                let mut os_borrow = self.os.borrow_mut();
+                if os_borrow.select(&item) {
+                    os_borrow.deinit();
+                    std::process::exit(0);
+                }
+                else {
+                    self.search_entry.set_text("");
+                    self.search_items.clear();
+                }
             }
         }
     }

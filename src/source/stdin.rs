@@ -1,5 +1,5 @@
 use crate::helpers::Helpers;
-use crate::model::{SearchItem, SelectAction};
+use crate::model::{SearchItem};
 use crate::source::{Source};
 use atty;
 use fuzzy_matcher::FuzzyMatcher;
@@ -54,9 +54,10 @@ impl Source for StdinSource {
                     image: None,
                     score,
                     source: self.name(),
-                    action: Box::new(move || {
+                    action: Box::new(move |os| {
                         let text = text.clone();
-                        SelectAction::Print(text)
+                        os.print(&text);
+                        true
                     }),
                     layer: crate::model::ItemLayer::Middle,
                 }

@@ -2,6 +2,8 @@ use relm4::gtk::gdk_pixbuf::Pixbuf;
 use std::io::Write;
 use std::process::{Command, Stdio};
 
+use crate::os::Os;
+
 #[derive(Clone)]
 pub struct ClipboardContent(pub Vec<u8>);
 
@@ -30,7 +32,6 @@ unsafe impl Send for ImmutablePixbuf {}
 unsafe impl Sync for ImmutablePixbuf {}
 
 impl ClipboardContent {
-
     pub fn copy(self) {
         let copy_command = Command::new("wl-copy")
             .stdin(Stdio::piped())
@@ -43,15 +44,14 @@ impl ClipboardContent {
     }
 }
 
-pub enum SelectAction {
-    Noop,
-    Exit,
-    Print(String),
-    Run(String),
-    RunInTerminal(String),
-    CopyToClipboard(ClipboardContent),
-    OpenUrl(String),
-}
+// pub enum SelectAction {
+//     Exit,
+//     Print(String),
+//     Run(String),
+//     RunInTerminal(String),
+//     CopyToClipboard(ClipboardContent),
+//     OpenUrl(String),
+// }
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub enum ItemLayer {
@@ -67,7 +67,7 @@ pub struct SearchItem {
     pub icon: Option<ImmutablePixbuf>,
     pub image: Option<ImmutablePixbuf>,
     pub score: i64,
-    pub action: Box<dyn Fn() -> SelectAction + Send + Sync>,
+    pub action: Box<dyn Fn(&mut Os) -> bool>,
     pub layer: ItemLayer,
     pub source: &'static str,
 }

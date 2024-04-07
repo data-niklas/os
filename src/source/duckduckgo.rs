@@ -2,6 +2,8 @@ use super::Source;
 use crate::helpers::Helpers;
 use rayon::prelude::*;
 use ureq::get;
+use scraper::{Html, Selector};
+
 
 use serde::{Deserialize, Serialize};
 
@@ -26,8 +28,6 @@ fn _default_user_agent() -> String {
 
 #[derive(Deserialize)]
 pub struct DuckduckgoConfig {
-    #[serde(default = "_default_icons")]
-    pub icons: bool,
     #[serde(default = "_default_cache_duration")]
     pub cache_duration: Duration,
     #[serde(default = "_default_user_agent")]

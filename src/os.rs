@@ -1,6 +1,6 @@
 use crate::helpers::Helpers;
 use crate::history::History;
-use crate::model::SearchItem;
+use crate::model::{SearchItem, ClipboardContent};
 use crate::opts::Config;
 
 #[cfg(feature = "cliphist")]
@@ -16,9 +16,8 @@ use crate::source::{
 };
 
 use shlex::{self, Shlex};
-use std::collections::HashMap;
 use std::process::Command;
-
+use std::{collections::HashMap, process::Stdio};
 
 use fuzzy_matcher::{skim::SkimMatcherV2, FuzzyMatcher};
 use rayon::prelude::*;
@@ -34,7 +33,6 @@ pub struct Os {
 }
 
 impl Os {
-
     fn init_sources(&mut self) {
         self.sources.par_iter_mut().for_each(|(_, source)| {
             let source_name = source.name();
@@ -82,44 +80,51 @@ impl Os {
         // self.history.deinit();
     }
 
-    pub fn run_select_action(&mut self, select_action: crate::model::SelectAction) {
-        match select_action {
-            crate::model::SelectAction::Print(text) => {
-                println!("{}", text);
-            }
-            crate::model::SelectAction::Run(action) => {
-                let args: Vec<_> = Shlex::new(&action).into_iter().collect();
-                let mut command = Command::new(&args[0]);
-                command.args(&args[1..]);
-                command.spawn().expect("Failed to spawn command");
-            }
-            crate::model::SelectAction::RunInTerminal(action) => {
-                let terminal_command = &self.config.terminal;
-
-                let mut command = Command::new(terminal_command);
-                command.arg("-e").arg(action);
-                command.spawn().expect("Failed to spawn command");
-            }
-            crate::model::SelectAction::Exit => {}
-            crate::model::SelectAction::Noop => {
-                return;
-            }
-            crate::model::SelectAction::CopyToClipboard(content) => {
-                content.copy();
-            }
-            crate::model::SelectAction::OpenUrl(url) => {
-                let mut command = Command::new("xdg-open");
-                command.arg(url);
-                command.spawn().expect("Failed to spawn command");
-            }
-        };
-        self.deinit();
+    pub fn print(&self, text: &str) {
+        println!("{}", text);
     }
 
-    pub fn select(&mut self, item: &crate::model::SearchItem) {
+    pub fn run(&self, action: &str) {
+        let args: Vec<_> = Shlex::new(&action).into_iter().collect();
+        let mut command = Command::new(&args[0]);
+        command.args(&args[1..]);
+        command
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null());
+        command.spawn().expect("Failed to spawn command");
+    }
+
+    pub fn run_in_terminal(&self, action: &str) {
+        let terminal_command = &self.config.terminal;
+
+        let mut command = Command::new(terminal_command);
+        command.arg("-e").arg(action);
+        command
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null());
+        command.spawn().expect("Failed to spawn command");
+    }
+
+    pub fn copy_to_clipboard(&self, content: ClipboardContent) {
+        content.copy();
+    }
+
+    pub fn open_url(&self, url: &str) {
+        let mut command = Command::new("xdg-open");
+        command.arg(url);
+        command
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null());
+        command.spawn().expect("Failed to spawn command");
+    }
+
+
+    pub fn select(&mut self, item: &crate::model::SearchItem) -> bool {
         self.history.add(item);
-        let select_action = (item.action)();
-        self.run_select_action(select_action);
+        (item.action)(self)
     }
 
     fn load_sources(enabled_sources: &Vec<String>) -> Vec<Box<dyn Source + Send + Sync>> {

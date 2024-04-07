@@ -142,14 +142,21 @@ impl RatatuiUI {
             Event::Key(key_event) if key_event.kind == KeyEventKind::Press => {
                 match key_event.code {
                     event::KeyCode::Esc => {
+                        app.os.deinit();
                         app.exit();
                         std::process::exit(0);
                     }
                     event::KeyCode::Enter => {
                         app.exit();
                         let item = app.items.get(app.list.selected().unwrap()).unwrap();
-                        app.os.select(item);
-                        std::process::exit(0);
+                        if app.os.select(item) {
+                            app.os.deinit();
+                            std::process::exit(0);
+                        }
+                        else {
+                            app.input.reset();
+                            app.items.clear();
+                        }
                     }
                     event::KeyCode::Down => {
                         app.list.next();

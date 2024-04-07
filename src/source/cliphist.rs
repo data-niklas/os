@@ -1,6 +1,6 @@
 use crate::helpers::Helpers;
 use crate::model::ImmutablePixbuf;
-use crate::model::{ClipboardContent, SearchItem, SelectAction};
+use crate::model::{ClipboardContent, SearchItem};
 use crate::source::Source;
 use ahash::{AHasher, RandomState};
 use fuzzy_matcher::FuzzyMatcher;
@@ -75,10 +75,10 @@ impl CliphistSource {
             image: item.1,
             score,
             source: self.name(),
-            action: Box::new(move || {
+            action: Box::new(move |os| {
                 let clipboard_content = item.2.clone();
-
-                SelectAction::CopyToClipboard(clipboard_content)
+                os.copy_to_clipboard(clipboard_content);
+                true
             }),
             layer: crate::model::ItemLayer::Bottom,
         }
