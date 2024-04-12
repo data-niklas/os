@@ -88,7 +88,7 @@ impl RatatuiUI {
         let chunks = Layout::default()
             .direction(Direction::Vertical)
             // .margin(2)
-            .constraints([Constraint::Length(3), Constraint::Min(1)].as_ref())
+            .constraints([Constraint::Length(3), Constraint::Min(1)])
             .split(frame.size());
         let width = chunks[0].width.max(3) - 3; // keep 2 for borders and 1 for cursor
         let scroll = app.input.visual_scroll(width as usize);
@@ -124,7 +124,7 @@ impl RatatuiUI {
         let list_chunks = Layout::default()
             .direction(Direction::Horizontal)
             .margin(1)
-            .constraints([Constraint::Min(1), Constraint::Length(1)].as_ref())
+            .constraints([Constraint::Min(1), Constraint::Length(1)])
             .split(chunks[1]);
         let block = Block::default()
             .borders(Borders::ALL)

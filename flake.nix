@@ -14,6 +14,17 @@
             overlays = [cargo2nix.overlays.default];
           };
 
+          libPath = with pkgs;
+            lib.makeLibraryPath [
+              libGL
+              libxkbcommon
+              wayland
+              xorg.libX11
+              xorg.libXcursor
+              xorg.libXi
+              xorg.libXrandr
+            ];
+
           rustPkgs = pkgs.rustBuilder.makePackageSet {
             rustVersion = "1.75.0";
             packageFun = import ./Cargo.nix;
@@ -154,7 +165,9 @@
                 })
               ];
           };
-          workspaceShell = rustPkgs.workspaceShell {};
+          workspaceShell = rustPkgs.workspaceShell {
+            LD_LIBRARY_PATH = libPath;
+          };
         in rec {
           packages = {
             # replace hello-world with your package name
