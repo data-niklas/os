@@ -35,10 +35,23 @@
                 (pkgs.rustBuilder.rustLib.makeOverride {
                   name = "os";
                   overrideAttrs = drv: {
-                    nativeBuildInputs = [
-                      pkgs.pkg-config
-                    ];
-                    buildInputs = [pkgs.sqlite];
+                    nativeBuildInputs =
+                      drv.nativeBuildInputs
+                      ++ [
+                        pkgs.pkg-config
+                        pkgs.makeWrapper
+                      ];
+                    buildInputs = with pkgs;
+                      drv.buildInputs
+                      ++ [
+                        sqlite
+                        xorg.libxcb
+                        wayland
+                      ];
+                    postInstall = ''
+                      wrapProgram $bin/bin/os --prefix LD_LIBRARY_PATH : "${libPath}"
+                      wrapProgram $out/bin/os --prefix LD_LIBRARY_PATH : "${libPath}"
+                    '';
                   };
                 })
                 (pkgs.rustBuilder.rustLib.makeOverride {
@@ -163,6 +176,28 @@
                     ];
                   };
                 })
+                (pkgs.rustBuilder.rustLib.makeOverride {
+                  name = "atspi-proxies";
+                  overrideAttrs = drv: {
+                    dependencies =
+                      drv.dependencies
+                      ++ [
+                        "zvariant"
+                        (rustPkgs."registry+https://github.com/rust-lang/crates.io-index".zvariant."3.15.2" {}).out
+                      ];
+                  };
+                })
+                (pkgs.rustBuilder.rustLib.makeOverride {
+                  name = "accesskit_unix";
+                  overrideAttrs = drv: {
+                    dependencies =
+                      drv.dependencies
+                      ++ [
+                        "zvariant"
+                        (rustPkgs."registry+https://github.com/rust-lang/crates.io-index".zvariant."3.15.2" {}).out
+                      ];
+                  };
+                })
               ];
           };
           workspaceShell = rustPkgs.workspaceShell {
@@ -171,7 +206,8 @@
         in rec {
           packages = {
             # replace hello-world with your package name
-            os = rustPkgs.workspace.os {};
+            os =
+              rustPkgs.workspace.os {};
             default = packages.os;
           };
           devShells = {
