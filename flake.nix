@@ -35,6 +35,11 @@
                 (pkgs.rustBuilder.rustLib.makeOverride {
                   name = "os";
                   overrideAttrs = drv: {
+                    features = [
+                      "linkding"
+                      "duckduckgo"
+                      "wayland"
+                    ];
                     nativeBuildInputs =
                       drv.nativeBuildInputs
                       ++ [
