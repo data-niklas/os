@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use crate::model::{OSImage, SearchItem};
+use crate::model::{SearchItem};
 use crate::os::Os;
 use crate::ui::UI;
 use crate::APPLICATION_ID;
@@ -11,7 +11,7 @@ use gtk4_layer_shell::{Edge, Layer, LayerShell};
 
 use relm4::gtk::gdk::Key;
 
-use relm4::gtk::gdk_pixbuf::ffi::GdkPixbuf;
+
 use relm4::gtk::glib::Propagation;
 
 use relm4::gtk::{Align, EventControllerKey, Justification, PolicyType};

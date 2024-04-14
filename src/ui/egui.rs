@@ -1,13 +1,13 @@
-use std::borrow::Cow;
+
 use std::cell::RefCell;
 use std::rc::Rc;
-use std::sync::Arc;
+
 
 use crate::ui::UI;
 use crate::{model::SearchItem, os::Os};
 
 use eframe::egui;
-use eframe::egui::load::Bytes;
+
 use egui::*;
 use image::EncodableLayout;
 
@@ -121,7 +121,7 @@ impl eframe::App for App {
                     std::process::exit(0);
                 }
 
-                let scroll_area = ScrollArea::vertical().show(ui, |ui| {
+                let _scroll_area = ScrollArea::vertical().show(ui, |ui| {
                     for (i, item) in self.items.iter().enumerate() {
                         let mut group = Frame::group(&ui.style());
                         if i == self.selected_index {
@@ -178,7 +178,7 @@ impl eframe::App for App {
                                 } else {
                                     ui.add_space(max_icon_size);
                                 }
-                                let height =
+                                let _height =
                                     ui.with_layout(Layout::top_down_justified(Align::Min), |ui| {
                                         ui.add(title);
                                         ui.add(subtitle);

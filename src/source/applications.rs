@@ -1,11 +1,11 @@
 use super::Source;
 use crate::helpers::Helpers;
-use crate::model::{ImmutablePixbuf, OSImage};
+use crate::model::{OSImage};
 use freedesktop_desktop_entry::{default_paths, DesktopEntry, Iter, PathSource};
 use freedesktop_icon_lookup::Cache;
-use image::ImageBuffer;
+
 use rayon::prelude::*;
-use relm4::gtk::gdk_pixbuf::Pixbuf;
+
 use std::sync::Arc;
 use image::io::Reader as ImageReader;
 use serde::{Deserialize, Serialize};

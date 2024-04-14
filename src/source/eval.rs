@@ -1,9 +1,9 @@
 use crate::helpers::Helpers;
 use crate::model::{ClipboardContent, SearchItem};
 use crate::source::Source;
-use eval::{eval, Expr};
+use eval::{Expr};
 use fuzzy_matcher::FuzzyMatcher;
-use std::io::{stdin, Read};
+
 
 pub struct EvalSource {}
 

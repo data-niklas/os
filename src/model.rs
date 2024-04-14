@@ -1,5 +1,5 @@
 use crate::os::Os;
-use image::{GenericImage, Rgba, RgbaImage, ImageBuffer};
+use image::{Rgba, ImageBuffer};
 use relm4::gtk::gdk_pixbuf::Pixbuf;
 use std::io::Write;
 use std::process::{Command, Stdio};
