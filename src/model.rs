@@ -1,8 +1,9 @@
+use crate::os::Os;
+use image::{GenericImage, Rgba, RgbaImage, ImageBuffer};
 use relm4::gtk::gdk_pixbuf::Pixbuf;
 use std::io::Write;
 use std::process::{Command, Stdio};
-
-use crate::os::Os;
+use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct ClipboardContent(pub Vec<u8>);
@@ -52,6 +53,8 @@ impl ClipboardContent {
 //     CopyToClipboard(ClipboardContent),
 //     OpenUrl(String),
 // }
+//
+pub type OSImage = ImageBuffer<Rgba<u8>, Arc<[u8]>>;
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub enum ItemLayer {
@@ -64,8 +67,8 @@ pub struct SearchItem {
     pub id: String,
     pub title: Option<String>,
     pub subtitle: Option<String>,
-    pub icon: Option<ImmutablePixbuf>,
-    pub image: Option<ImmutablePixbuf>,
+    pub icon: Option<OSImage>,
+    pub image: Option<OSImage>,
     pub score: i64,
     pub action: Box<dyn Fn(&mut Os) -> bool>,
     pub layer: ItemLayer,

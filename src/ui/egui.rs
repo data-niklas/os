@@ -7,7 +7,9 @@ use crate::ui::UI;
 use crate::{model::SearchItem, os::Os};
 
 use eframe::egui;
+use eframe::egui::load::Bytes;
 use egui::*;
+use image::EncodableLayout;
 
 pub struct EguiUI {
     os: Rc<RefCell<Os>>,
@@ -85,17 +87,21 @@ impl eframe::App for App {
                 ui.add_space(6.0);
                 res.request_focus();
 
+                let mut items_changed = false;
                 if res.changed() {
                     self.search();
+                    items_changed = true;
                 }
 
                 if ui.input(|i| i.key_pressed(Key::ArrowDown))
                     && self.selected_index < self.items.len() - 1
                 {
                     self.selected_index = self.selected_index + 1;
+                    items_changed = true;
                 }
                 if ui.input(|i| i.key_pressed(Key::ArrowUp)) && self.selected_index > 0 {
                     self.selected_index = self.selected_index - 1;
+                    items_changed = true;
                 }
                 if ui.input(|i| i.key_pressed(Key::Enter)) {
                     if let Some(item) = self.items.get(self.selected_index) {
@@ -106,6 +112,7 @@ impl eframe::App for App {
                         } else {
                             self.items = vec![];
                             self.text = String::new();
+                            items_changed = true;
                         }
                     }
                 }
@@ -131,10 +138,54 @@ impl eframe::App for App {
                             //     let uri = Cow::Owned(uri);
                             //     ui.image(ImageSource::Bytes { uri, bytes });
                             // }
-                            ui.heading(item.title.clone().unwrap_or_default());
-                            ui.label(item.subtitle.clone().unwrap_or_default());
+                            ui.horizontal(|ui| {
+                                let title_text: RichText =
+                                    item.title.clone().unwrap_or_default().into();
+                                let title_text_height = ui.fonts(|fonts| {
+                                    title_text.font_height(fonts, ui.style().as_ref())
+                                });
+                                let title = Label::new(title_text.heading());
+                                let subtitle_text: RichText =
+                                    item.subtitle.clone().unwrap_or_default().into();
+                                let subtitle_text_height = ui.fonts(|fonts| {
+                                    subtitle_text.font_height(fonts, ui.style().as_ref())
+                                });
+                                let subtitle = Label::new(subtitle_text);
+                                // Padding between title and subtitle needs to be considered
+                                let max_icon_size = title_text_height
+                                    + subtitle_text_height
+                                    + ui.spacing().item_spacing.x;
+                                if let Some(icon) = &item.icon {
+                                    let color_image = ColorImage::from_rgba_unmultiplied(
+                                        [icon.width() as usize, icon.height() as usize],
+                                        icon.as_bytes(),
+                                    );
+                                    let size = egui::vec2(
+                                        color_image.size[0] as f32,
+                                        color_image.size[1] as f32,
+                                    );
+                                    let handle = ctx.load_texture(
+                                        "bytes://",
+                                        color_image,
+                                        TextureOptions::LINEAR,
+                                    );
+                                    let sized_image =
+                                        egui::load::SizedTexture::new(handle.id(), size);
+                                    let image = egui::Image::from_texture(sized_image)
+                                        .max_width(max_icon_size)
+                                        .max_height(max_icon_size);
+                                    ui.add(image);
+                                } else {
+                                    ui.add_space(max_icon_size);
+                                }
+                                let height =
+                                    ui.with_layout(Layout::top_down_justified(Align::Min), |ui| {
+                                        ui.add(title);
+                                        ui.add(subtitle);
+                                    });
+                            });
                         });
-                        if i == self.selected_index {
+                        if i == self.selected_index && items_changed {
                             response.response.scroll_to_me(None);
                         }
                     }

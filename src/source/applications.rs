@@ -1,13 +1,16 @@
 use super::Source;
 use crate::helpers::Helpers;
-use crate::model::ImmutablePixbuf;
+use crate::model::{ImmutablePixbuf, OSImage};
 use freedesktop_desktop_entry::{default_paths, DesktopEntry, Iter, PathSource};
 use freedesktop_icon_lookup::Cache;
+use image::ImageBuffer;
 use rayon::prelude::*;
 use relm4::gtk::gdk_pixbuf::Pixbuf;
-
+use std::sync::Arc;
+use image::io::Reader as ImageReader;
 use serde::{Deserialize, Serialize};
 
+use std::io::Cursor;
 use std::time::Duration;
 use std::{
     borrow::Cow,
@@ -88,7 +91,7 @@ impl LoadedDesktopEntry {
 pub struct ParsedDesktopEntry {
     pub name: String,
     pub description: String,
-    pub icon: Option<ImmutablePixbuf>,
+    pub icon: Option<OSImage>,
     pub exec: String,
     pub terminal: bool,
 }
@@ -96,9 +99,21 @@ pub struct ParsedDesktopEntry {
 impl ParsedDesktopEntry {
     fn from_loaded(entry: LoadedDesktopEntry, icons: bool) -> Self {
         let icon = if icons {
-            entry
-                .icon
-                .and_then(|icon_path| Pixbuf::from_file(icon_path).map(ImmutablePixbuf::new).ok())
+            entry.icon.and_then(|icon_path| {
+                let bytes = fs::read(&icon_path).ok()?;
+                let arc_bytes: Arc<[u8]> = bytes.into();
+                let cursor = Cursor::new(arc_bytes);
+                let rgba_image = ImageReader::new(cursor)
+                    .with_guessed_format()
+                    .ok()?
+                    .decode()
+                    .ok()?
+                    .into_rgba8();
+                let rgba_size = rgba_image.dimensions();
+                let raw_bytes = rgba_image.into_raw();
+                let arc_raw_bytes: Arc<[u8]> = raw_bytes.into();
+                OSImage::from_raw(rgba_size.0, rgba_size.1, arc_raw_bytes)
+            })
         } else {
             None
         };

@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use crate::model::SearchItem;
+use crate::model::{OSImage, SearchItem};
 use crate::os::Os;
 use crate::ui::UI;
 use crate::APPLICATION_ID;
@@ -11,6 +11,7 @@ use gtk4_layer_shell::{Edge, Layer, LayerShell};
 
 use relm4::gtk::gdk::Key;
 
+use relm4::gtk::gdk_pixbuf::ffi::GdkPixbuf;
 use relm4::gtk::glib::Propagation;
 
 use relm4::gtk::{Align, EventControllerKey, Justification, PolicyType};
@@ -67,12 +68,44 @@ impl RelmListItem for SearchItem {
         }
 
         if self.icon.is_some() {
-            let image = self.icon.as_ref().unwrap().borrow();
-            widgets.icon.set_from_pixbuf(Some(image));
+            let image = self.icon.as_ref().unwrap();
+            let raw_bytes = image.as_raw().as_ref();
+            let image_bytes =
+                relm4::gtk::glib::Bytes::from_static(unsafe { std::mem::transmute(raw_bytes) });
+            let width: i32 = image.width().try_into().unwrap();
+            let height: i32 = image.height().try_into().unwrap();
+            // 4 due to RGBA times width
+            let stride: i32 = width * 4;
+            let pixbuf = relm4::gtk::gdk_pixbuf::Pixbuf::from_bytes(
+                &image_bytes,
+                gtk::gdk_pixbuf::Colorspace::Rgb,
+                true,
+                8,
+                width,
+                height,
+                stride,
+            );
+            widgets.icon.set_from_pixbuf(Some(&pixbuf));
         }
         if self.image.is_some() {
-            let image = self.image.as_ref().unwrap().borrow();
-            widgets.image.set_from_pixbuf(Some(image));
+            let image = self.image.as_ref().unwrap();
+            let raw_bytes = image.as_raw().as_ref();
+            let image_bytes =
+                relm4::gtk::glib::Bytes::from_static(unsafe { std::mem::transmute(raw_bytes) });
+            let width: i32 = image.width().try_into().unwrap();
+            let height: i32 = image.height().try_into().unwrap();
+            // 4 due to RGBA times width
+            let stride: i32 = width * 4;
+            let pixbuf = relm4::gtk::gdk_pixbuf::Pixbuf::from_bytes(
+                &image_bytes,
+                gtk::gdk_pixbuf::Colorspace::Rgb,
+                true,
+                8,
+                width,
+                height,
+                stride,
+            );
+            widgets.image.set_from_pixbuf(Some(&pixbuf));
         }
     }
 
