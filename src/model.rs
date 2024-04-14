@@ -1,36 +1,11 @@
 use crate::os::Os;
-use image::{Rgba, ImageBuffer};
-use relm4::gtk::gdk_pixbuf::Pixbuf;
+use image::{ImageBuffer, Rgba};
 use std::io::Write;
 use std::process::{Command, Stdio};
 use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct ClipboardContent(pub Vec<u8>);
-
-pub struct ImmutablePixbuf(Pixbuf);
-impl ImmutablePixbuf {
-    pub fn new(pixbuf: Pixbuf) -> Self {
-        ImmutablePixbuf(pixbuf)
-    }
-
-    pub fn borrow(&self) -> &Pixbuf {
-        &self.0
-    }
-}
-impl Clone for ImmutablePixbuf {
-    fn clone(&self) -> Self {
-        ImmutablePixbuf(self.0.clone())
-    }
-}
-impl PartialEq for ImmutablePixbuf {
-    fn eq(&self, other: &Self) -> bool {
-        self.0 == other.0
-    }
-}
-
-unsafe impl Send for ImmutablePixbuf {}
-unsafe impl Sync for ImmutablePixbuf {}
 
 impl ClipboardContent {
     pub fn copy(self) {

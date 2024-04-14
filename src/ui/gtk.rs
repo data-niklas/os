@@ -226,7 +226,6 @@ impl SimpleComponent for GtkApp {
                                 Key::Escape => {
                                     os_for_key_pressed.borrow_mut().deinit();
                                     std::process::exit(0);
-                                    Propagation::Stop
                                 },
                                 Key::Up => {
                                     sender2.input(Msg::Up);

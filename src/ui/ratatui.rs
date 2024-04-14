@@ -4,7 +4,6 @@ use crossterm::event::{Event, KeyEventKind};
 use crossterm::{event, execute, terminal::*};
 use ratatui::prelude::*;
 use ratatui::widgets::{Block, Borders, Paragraph, Scrollbar, ScrollbarState};
-use relm4::gtk::prelude::ListItemExt;
 use std::io;
 use std::io::{stdout, Stdout};
 use tui_input::backend::crossterm::EventHandler;
@@ -59,7 +58,6 @@ impl App {
 }
 
 pub struct RatatuiUI {
-    prompt: String,
     tui: Tui,
     app: App,
 }
@@ -79,7 +77,6 @@ impl RatatuiUI {
                 list,
                 scroll_state,
             },
-            prompt: prompt.to_string(),
             tui,
         }
     }
