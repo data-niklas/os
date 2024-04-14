@@ -28,6 +28,11 @@
           rustPkgs = pkgs.rustBuilder.makePackageSet {
             rustVersion = "1.75.0";
             packageFun = import ./Cargo.nix;
+            rootFeatures = [
+              "os/linkding"
+              "os/duckduckgo"
+              "os/wayland"
+            ];
             packageOverrides = pkgs:
               pkgs.rustBuilder.overrides.all
               ++ [
@@ -35,11 +40,6 @@
                 (pkgs.rustBuilder.rustLib.makeOverride {
                   name = "os";
                   overrideAttrs = drv: {
-                    features = [
-                      "linkding"
-                      "duckduckgo"
-                      "wayland"
-                    ];
                     nativeBuildInputs =
                       drv.nativeBuildInputs
                       ++ [

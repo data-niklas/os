@@ -12,7 +12,7 @@ use crate::source::LinkdingSource;
 use crate::source::DuckduckgoSource;
 
 use crate::source::{
-    ApplicationsSource, HstrSource, Source, StdinSource, SystemctlSource, ZoxideSource,
+    ApplicationsSource, HstrSource, Source, StdinSource, SystemctlSource, ZoxideSource, EvalSource
 };
 
 use shlex::{self, Shlex};
@@ -132,6 +132,7 @@ impl Os {
         for name in enabled_sources {
             match name.as_str() {
                 "stdin" => sources.push(Box::new(StdinSource::new())),
+                "eval" => sources.push(Box::new(EvalSource::new())),
                 "hstr" => sources.push(Box::new(HstrSource::new())),
                 #[cfg(feature = "cliphist")]
                 "cliphist" => sources.push(Box::new(CliphistSource::new())),

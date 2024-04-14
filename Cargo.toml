@@ -50,3 +50,4 @@ urlencoding = {version="2.1.3", optional=true}
 eframe = {version="0.27.2"}
 egui_extras = { version = "*", features = ["default", "all_loaders"] }
 image = { version = "0.25.1", features = ["jpeg", "png"] } # Add the types you want support for
+eval = "0.4.3"

@@ -47,7 +47,7 @@ impl Source for StdinSource {
             .map(|(s, score)| {
                 let text = s.clone();
                 SearchItem {
-                    id: "stdin".to_string() + &text,
+                    id: self.name().to_string() + &text,
                     title: Some(s.clone()),
                     subtitle: None,
                     icon: None,

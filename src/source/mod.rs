@@ -14,6 +14,9 @@ pub use zoxide::*;
 mod hstr;
 pub use hstr::*;
 
+mod eval;
+pub use eval::*;
+
 #[cfg(feature = "cliphist")]
 mod cliphist;
 #[cfg(feature = "cliphist")]
