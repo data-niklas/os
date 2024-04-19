@@ -1,7 +1,5 @@
-
 use std::cell::RefCell;
 use std::rc::Rc;
-
 
 use crate::ui::UI;
 use crate::{model::SearchItem, os::Os};
@@ -85,7 +83,9 @@ impl eframe::App for App {
                     .margin(Margin::symmetric(4.0, 4.0))
                     .ui(ui);
                 ui.add_space(6.0);
-                res.request_focus();
+                if !res.has_focus() {
+                    res.request_focus();
+                }
 
                 let mut items_changed = false;
                 if res.changed() {
@@ -130,14 +130,6 @@ impl eframe::App for App {
                                 .stroke(Stroke::new(0.0, Color32::from_rgb(200, 208, 236)));
                         }
                         let response = group.show(ui, |ui| {
-                            // if item.icon.is_some() {
-                            //     let pixbuf = item.icon.as_ref().unwrap().borrow();
-                            //     let bytes = pixbuf.read_pixel_bytes().to_vec().into_boxed_slice();
-                            //     let bytes = load::Bytes::Shared(Arc::from(bytes));
-                            //     let uri = format!("{}.jpeg", i);
-                            //     let uri = Cow::Owned(uri);
-                            //     ui.image(ImageSource::Bytes { uri, bytes });
-                            // }
                             ui.horizontal(|ui| {
                                 let title_text: RichText =
                                     item.title.clone().unwrap_or_default().into();

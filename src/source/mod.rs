@@ -17,6 +17,9 @@ pub use hstr::*;
 mod eval;
 pub use eval::*;
 
+mod search_sites;
+pub use search_sites::*;
+
 #[cfg(feature = "cliphist")]
 mod cliphist;
 #[cfg(feature = "cliphist")]

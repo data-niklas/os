@@ -1,6 +1,6 @@
 use crate::helpers::Helpers;
 use crate::history::History;
-use crate::model::{SearchItem, ClipboardContent};
+use crate::model::{ClipboardContent, SearchItem};
 use crate::opts::Config;
 
 #[cfg(feature = "cliphist")]
@@ -12,7 +12,8 @@ use crate::source::LinkdingSource;
 use crate::source::DuckduckgoSource;
 
 use crate::source::{
-    ApplicationsSource, HstrSource, Source, StdinSource, SystemctlSource, ZoxideSource, EvalSource
+    ApplicationsSource, EvalSource, HstrSource, SearchSitesSource, Source, StdinSource,
+    SystemctlSource, ZoxideSource,
 };
 
 use shlex::{self, Shlex};
@@ -121,7 +122,6 @@ impl Os {
         command.spawn().expect("Failed to spawn command");
     }
 
-
     pub fn select(&mut self, item: &crate::model::SearchItem) -> bool {
         self.history.add(item);
         (item.action)(self)
@@ -134,6 +134,7 @@ impl Os {
                 "stdin" => sources.push(Box::new(StdinSource::new())),
                 "eval" => sources.push(Box::new(EvalSource::new())),
                 "hstr" => sources.push(Box::new(HstrSource::new())),
+                "search_sites" => sources.push(Box::new(SearchSitesSource::new())),
                 #[cfg(feature = "cliphist")]
                 "cliphist" => sources.push(Box::new(CliphistSource::new())),
                 "zoxide" => sources.push(Box::new(ZoxideSource::new())),

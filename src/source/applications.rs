@@ -1,14 +1,14 @@
 use super::Source;
 use crate::helpers::Helpers;
-use crate::model::{OSImage};
+use crate::model::OSImage;
 use freedesktop_desktop_entry::{default_paths, DesktopEntry, Iter, PathSource};
 use freedesktop_icon_lookup::Cache;
 
 use rayon::prelude::*;
 
-use std::sync::Arc;
 use image::io::Reader as ImageReader;
 use serde::{Deserialize, Serialize};
+use std::sync::Arc;
 
 use std::io::Cursor;
 use std::time::Duration;
@@ -204,7 +204,7 @@ impl Source for ApplicationsSource {
                 let exec = entry.exec.clone();
                 let terminal = entry.terminal.clone();
                 crate::model::SearchItem {
-                    id: "applications".to_string() + &entry.name,
+                    id: self.name().to_string() + &entry.name,
                     title: Some(entry.name.clone()),
                     subtitle: Some(entry.description.clone()),
                     icon: entry.icon.clone(),
