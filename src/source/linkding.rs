@@ -129,25 +129,25 @@ impl Source for LinkdingSource {
                 continue;
             }
             let url = bookmark.url.clone();
-            let subtitle = format!(
-                "{} ({})",
-                url,
-                &bookmark
-                    .tag_names
-                    .iter()
-                    .map(|tag_name| "#".to_string() + tag_name)
-                    .collect::<Vec<String>>()
-                    .join(", "),
-            );
-            let title = if bookmark.title.is_empty() {
-                None
+            let formatted_tags = bookmark
+                .tag_names
+                .iter()
+                .map(|tag_name| "#".to_string() + tag_name)
+                .collect::<Vec<String>>()
+                .join(", ");
+
+            let (title, subtitle) = if bookmark.title != "" {
+                (
+                    Some(bookmark.title.clone()),
+                    Some(format!("{} ({})", url, formatted_tags)),
+                )
             } else {
-                Some(bookmark.title.clone())
+                (Some(url.clone()), Some(formatted_tags))
             };
             results.push(SearchItem {
                 id: self.name().to_string() + &bookmark.id.to_string(),
                 title,
-                subtitle: Some(subtitle),
+                subtitle,
                 icon: None,
                 image: None,
                 score,

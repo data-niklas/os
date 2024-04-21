@@ -45,6 +45,22 @@ impl Os {
         });
     }
 
+    fn item_score(item: &SearchItem, history_score: u32) -> f32 {
+        let start_score = match item.layer {
+            crate::model::ItemLayer::Top => 2.,
+            crate::model::ItemLayer::Middle => 1.,
+            crate::model::ItemLayer::Bottom => 0.,
+        };
+        // Maps score to between 0 and 1
+        let relative_score = 1. - 1. / ((item.score as f32) / 10. + 1.);
+        let absolute_score = start_score + relative_score;
+        // Lets history grow slower towards 1
+        let history_score = 1. - 1. / ((history_score as f32) / 50. + 1.);
+        let combined_score = (absolute_score + history_score).min(3.0);
+
+        combined_score / 3.0
+    }
+
     pub fn search(&self, query: &str) -> Vec<crate::model::SearchItem> {
         let sources = &self.sources;
         let matcher = &self.matcher;
@@ -56,16 +72,12 @@ impl Os {
             .into_iter()
             .map(|item| {
                 let history_score = self.history.get(&item);
-                (item, history_score)
+                let item_score = Self::item_score(&item, history_score);
+                (item, item_score)
             })
-            .collect::<Vec<(SearchItem, u32)>>();
-        items_with_history_score.sort_by(|a, b| {
-            let cmp = b.1.cmp(&a.1);
-            if cmp == std::cmp::Ordering::Equal {
-                b.0.cmp(&a.0)
-            } else {
-                cmp
-            }
+            .collect::<Vec<(SearchItem, f32)>>();
+        items_with_history_score.sort_by(|(_a_item, a_item_score), (_b_item, b_item_score)| {
+            b_item_score.total_cmp(a_item_score)
         });
         items_with_history_score
             .into_iter()

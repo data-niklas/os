@@ -1,7 +1,7 @@
 use crate::helpers::Helpers;
 use crate::model::{ClipboardContent, SearchItem};
 use crate::source::Source;
-use eval::{Expr};
+use eval::Expr;
 use fuzzy_matcher::FuzzyMatcher;
 
 
@@ -30,6 +30,9 @@ impl Source for EvalSource {
         let expr = Expr::new(query);
         let result = expr.exec();
         if let Ok(value) = result {
+            if value.is_null() {
+                return vec![];
+            }
             let value_text = value.to_string();
             let action_value_text = value_text.clone();
             let item = SearchItem {
