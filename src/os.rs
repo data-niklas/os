@@ -12,8 +12,8 @@ use crate::source::LinkdingSource;
 use crate::source::DuckduckgoSource;
 
 use crate::source::{
-    ApplicationsSource, EvalSource, HstrSource, SearchSitesSource, Source, StdinSource,
-    SystemctlSource, ZoxideSource,
+    ApplicationsSource, EvalSource, HistorySource, HstrSource, SearchSitesSource, Source,
+    StdinSource, SystemctlSource, ZoxideSource,
 };
 
 use shlex::{self, Shlex};
@@ -147,6 +147,7 @@ impl Os {
                 "eval" => sources.push(Box::new(EvalSource::new())),
                 "hstr" => sources.push(Box::new(HstrSource::new())),
                 "search_sites" => sources.push(Box::new(SearchSitesSource::new())),
+                "history" => sources.push(Box::new(HistorySource::new())),
                 #[cfg(feature = "cliphist")]
                 "cliphist" => sources.push(Box::new(CliphistSource::new())),
                 "zoxide" => sources.push(Box::new(ZoxideSource::new())),

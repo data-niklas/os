@@ -28,6 +28,9 @@ pub use cliphist::*;
 mod systemctl;
 pub use systemctl::*;
 
+mod history;
+pub use history::*;
+
 #[cfg(feature="linkding")]
 mod linkding;
 #[cfg(feature="linkding")]
