@@ -62,6 +62,10 @@ pub struct Config {
     #[default(100)]
     #[clap(short, long)]
     pub maximum_list_item_count: usize,
+
+    #[default(false)]
+    #[clap(short, long, action)]
+    pub wayland_layer: bool,
 }
 
 impl Config {

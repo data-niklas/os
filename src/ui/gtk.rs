@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use crate::model::{SearchItem};
+use crate::model::SearchItem;
 use crate::os::Os;
 use crate::ui::UI;
 use crate::APPLICATION_ID;
@@ -10,7 +10,6 @@ use gtk::SearchEntry;
 use gtk4_layer_shell::{Edge, Layer, LayerShell};
 
 use relm4::gtk::gdk::Key;
-
 
 use relm4::gtk::glib::Propagation;
 
@@ -23,20 +22,22 @@ use std::cell::RefCell;
 pub struct GtkUI {
     os: Rc<RefCell<Os>>,
     prompt: String,
+    wayland_layer: bool,
 }
 
 impl UI for GtkUI {
     fn run(&mut self) {
         let app = RelmApp::new(APPLICATION_ID).with_args(vec![]);
-        app.run::<GtkApp>((self.os.clone(), self.prompt.clone()));
+        app.run::<GtkApp>((self.os.clone(), self.prompt.clone(), self.wayland_layer));
     }
 }
 
 impl GtkUI {
-    pub fn new(os: Os, prompt: &str) -> Self {
+    pub fn new(os: Os, prompt: &str, wayland_layer: bool) -> Self {
         GtkUI {
             os: Rc::new(RefCell::new(os)),
             prompt: prompt.to_string(),
+            wayland_layer,
         }
     }
 }
@@ -195,7 +196,7 @@ pub enum Msg {
 
 #[relm4::component]
 impl SimpleComponent for GtkApp {
-    type Init = (Rc<RefCell<Os>>, String);
+    type Init = (Rc<RefCell<Os>>, String, bool);
     type Input = Msg;
     type Output = ();
 
@@ -263,19 +264,21 @@ impl SimpleComponent for GtkApp {
         root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
-        let (os, prompt) = init;
+        let (os, prompt, wayland_layer) = init;
         let os_for_key_pressed = os.clone();
         let search_items: TypedListView<SearchItem, gtk::SingleSelection> = TypedListView::new();
         let search_items_box = &search_items.view;
         let widgets = view_output!();
         #[cfg(feature = "wayland")]
         {
-            widgets.window.init_layer_shell();
-            widgets
-                .window
-                .set_keyboard_mode(gtk4_layer_shell::KeyboardMode::OnDemand);
-            widgets.window.set_layer(Layer::Overlay);
-            widgets.window.auto_exclusive_zone_enable();
+            if wayland_layer {
+                widgets.window.init_layer_shell();
+                widgets
+                    .window
+                    .set_keyboard_mode(gtk4_layer_shell::KeyboardMode::OnDemand);
+                widgets.window.set_layer(Layer::Overlay);
+                widgets.window.auto_exclusive_zone_enable();
+            }
         };
         let search_entry = widgets.search_entry.clone();
         search_entry.set_placeholder_text(Some(&prompt));
