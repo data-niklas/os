@@ -133,6 +133,7 @@ impl RelmListItem for SearchItem {
                         set_hexpand: true,
                         set_halign: Align::Start,
                         set_wrap: false,
+                        set_lines: 1
                     },
                     #[name="image"]
                     gtk::Image {
@@ -147,6 +148,7 @@ impl RelmListItem for SearchItem {
                         set_attributes: Some({
                             &attr_list
                         }),
+                        set_lines: 1
                     },
                 },
             }
