@@ -26,7 +26,7 @@ pub struct GtkUI {
 impl UI for GtkUI {
     fn run(&mut self) {
         let app = RelmApp::new(APPLICATION_ID).with_args(vec![]);
-        app.run::<GtkApp>((self.os.clone()));
+        app.run::<GtkApp>(self.os.clone());
     }
 }
 
@@ -192,7 +192,7 @@ pub enum Msg {
 
 #[relm4::component]
 impl SimpleComponent for GtkApp {
-    type Init = (Rc<RefCell<Os>>);
+    type Init = Rc<RefCell<Os>>;
     type Input = Msg;
     type Output = ();
 
@@ -260,7 +260,7 @@ impl SimpleComponent for GtkApp {
         root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
-        let (os) = init;
+        let os = init;
         let prompt = os.borrow().config.prompt.clone();
         let initial_search: bool = os.borrow().config.initial_search;
         let os_for_key_pressed = os.clone();

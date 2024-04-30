@@ -3,8 +3,8 @@ use crate::model::SearchItem;
 use crate::source::Source;
 use fuzzy_matcher::FuzzyMatcher;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::process::Command;
+
+
 use std::time::Duration;
 
 fn _default_limit() -> u32 {
@@ -63,8 +63,8 @@ impl Source for HistorySource {
         "history"
     }
 
-    fn init(&mut self, config: &toml::Table, helpers: &Helpers) {
-        let config: HistoryConfig = config.clone().try_into().unwrap();
+    fn init(&mut self, config: &toml::Table, _helpers: &Helpers) {
+        let _config: HistoryConfig = config.clone().try_into().unwrap();
         // let cache_duration = config.cache_duration;
         // if !helpers.cache_expired(self.name(), cache_duration) {
         //     let bookmarks: Bookmarks = helpers.read_cache(self.name()).unwrap();
@@ -85,8 +85,8 @@ impl Source for HistorySource {
 
     fn search(
         &self,
-        query: &str,
-        matcher: &Box<dyn FuzzyMatcher + Send + Sync>,
+        _query: &str,
+        _matcher: &Box<dyn FuzzyMatcher + Send + Sync>,
     ) -> Vec<SearchItem> {
         // let query_words: Vec<&str> = query.split_whitespace().collect();
         // let query_tags: Vec<&str> = query_words
