@@ -63,16 +63,16 @@ pub struct RatatuiUI {
 }
 
 impl RatatuiUI {
-    pub fn new(os: Os, prompt: &str) -> Self {
+    pub fn new(os: Os) -> Self {
         let tui = init().unwrap();
         let mut list = ListState::default().circular(false);
         list.select(Some(0));
         let scroll_state = ScrollbarState::default();
         RatatuiUI {
             app: App {
-                prompt: prompt.to_string(),
                 items: vec![],
                 input: Input::new("".to_string()),
+                prompt: os.config.prompt.clone(),
                 os,
                 list,
                 scroll_state,
@@ -211,7 +211,9 @@ impl Widget for TuiSearchItem {
 
 impl UI for RatatuiUI {
     fn run(&mut self) {
-        self.app.search();
+        if self.app.os.config.initial_search {
+            self.app.search();
+        }
         loop {
             self.tui
                 .draw(|frame| Self::render_frame(frame, &mut self.app))

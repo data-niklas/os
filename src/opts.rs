@@ -65,7 +65,12 @@ pub struct Config {
 
     #[default(false)]
     #[clap(short, long, action)]
+    #[cfg(feature = "wayland")]
     pub wayland_layer: bool,
+
+    #[default(false)]
+    #[clap(short, long, action)]
+    pub initial_search: bool,
 }
 
 impl Config {

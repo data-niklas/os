@@ -21,23 +21,19 @@ use relm4::{
 use std::cell::RefCell;
 pub struct GtkUI {
     os: Rc<RefCell<Os>>,
-    prompt: String,
-    wayland_layer: bool,
 }
 
 impl UI for GtkUI {
     fn run(&mut self) {
         let app = RelmApp::new(APPLICATION_ID).with_args(vec![]);
-        app.run::<GtkApp>((self.os.clone(), self.prompt.clone(), self.wayland_layer));
+        app.run::<GtkApp>((self.os.clone()));
     }
 }
 
 impl GtkUI {
-    pub fn new(os: Os, prompt: &str, wayland_layer: bool) -> Self {
+    pub fn new(os: Os) -> Self {
         GtkUI {
             os: Rc::new(RefCell::new(os)),
-            prompt: prompt.to_string(),
-            wayland_layer,
         }
     }
 }
@@ -196,7 +192,7 @@ pub enum Msg {
 
 #[relm4::component]
 impl SimpleComponent for GtkApp {
-    type Init = (Rc<RefCell<Os>>, String, bool);
+    type Init = (Rc<RefCell<Os>>);
     type Input = Msg;
     type Output = ();
 
@@ -264,14 +260,16 @@ impl SimpleComponent for GtkApp {
         root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
-        let (os, prompt, wayland_layer) = init;
+        let (os) = init;
+        let prompt = os.borrow().config.prompt.clone();
+        let initial_search: bool = os.borrow().config.initial_search;
         let os_for_key_pressed = os.clone();
         let search_items: TypedListView<SearchItem, gtk::SingleSelection> = TypedListView::new();
         let search_items_box = &search_items.view;
         let widgets = view_output!();
         #[cfg(feature = "wayland")]
         {
-            if wayland_layer {
+            if os.borrow().config.wayland_layer {
                 widgets.window.init_layer_shell();
                 widgets
                     .window
@@ -287,7 +285,9 @@ impl SimpleComponent for GtkApp {
             search_items,
             search_entry,
         };
-        model.search("");
+        if initial_search {
+            model.search("");
+        }
         ComponentParts { model, widgets }
     }
 

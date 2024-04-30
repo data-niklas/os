@@ -11,14 +11,12 @@ use image::EncodableLayout;
 
 pub struct EguiUI {
     os: Rc<RefCell<Os>>,
-    prompt: String,
 }
 
 impl EguiUI {
-    pub fn new(os: Os, prompt: &str) -> Self {
+    pub fn new(os: Os) -> Self {
         Self {
             os: Rc::new(RefCell::new(os)),
-            prompt: prompt.to_string(),
         }
     }
 }
@@ -28,14 +26,16 @@ impl UI for EguiUI {
         let mut options = eframe::NativeOptions::default();
         options.viewport = options.viewport.with_inner_size(Vec2::new(400.0, 640.0));
         let os = self.os.clone();
-        let prompt = self.prompt.clone();
         let _ = eframe::run_native(
             "os",
             options,
             Box::new(move |cc| {
                 egui_extras::install_image_loaders(&cc.egui_ctx);
-                let mut app = App::new(os, prompt);
-                app.search();
+                let initial_search: bool = os.borrow().config.initial_search;
+                let mut app = App::new(os);
+                if initial_search {
+                    app.search();
+                }
                 Box::new(app)
             }),
         );
@@ -51,7 +51,8 @@ struct App {
 }
 
 impl App {
-    pub fn new(os: Rc<RefCell<Os>>, prompt: String) -> Self {
+    pub fn new(os: Rc<RefCell<Os>>) -> Self {
+        let prompt = os.borrow().config.prompt.clone();
         Self {
             prompt,
             os,
@@ -61,7 +62,6 @@ impl App {
         }
     }
     pub fn search(&mut self) {
-        // self.list.select(Some(0));
         let os = self.os.borrow_mut();
         self.items = os
             .search(&self.text)
