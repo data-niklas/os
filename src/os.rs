@@ -12,8 +12,8 @@ use crate::source::LinkdingSource;
 use crate::source::DuckduckgoSource;
 
 use crate::source::{
-    ApplicationsSource, EvalSource, HistorySource, HstrSource, SearchSitesSource, Source,
-    StdinSource, SystemctlSource, ZoxideSource,
+    ApplicationsSource, EvalSource, HistorySource, HstrSource, RunCommandsSource,
+    SearchSitesSource, Source, StdinSource, SystemctlSource, ZoxideSource,
 };
 
 use shlex::{self, Shlex};
@@ -24,7 +24,6 @@ use fuzzy_matcher::{skim::SkimMatcherV2, FuzzyMatcher};
 use rayon::prelude::*;
 
 use log::warn;
-
 pub struct Os {
     matcher: Box<dyn FuzzyMatcher + Send + Sync>,
     sources: HashMap<String, Box<dyn Source + Send + Sync>>,
@@ -153,6 +152,7 @@ impl Os {
                 "zoxide" => sources.push(Box::new(ZoxideSource::new())),
                 "applications" => sources.push(Box::new(ApplicationsSource::new())),
                 "systemctl" => sources.push(Box::new(SystemctlSource::new())),
+                "run_commands" => sources.push(Box::new(RunCommandsSource::new())),
                 #[cfg(feature = "linkding")]
                 "linkding" => sources.push(Box::new(LinkdingSource::new())),
                 #[cfg(feature = "duckduckgo")]

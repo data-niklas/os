@@ -327,7 +327,7 @@ impl SimpleComponent for GtkApp {
                     let selection = &self.search_items.selection_model;
                     let selected = selection.selected();
                     if selected >= selection.n_items() {
-                        return;
+                        return
                     }
                     self.search_items.get(selected).unwrap()
                 };

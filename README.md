@@ -37,3 +37,8 @@ Mostly complete and will be in low maintenance mode.
 ## FAQ
 - Q: Why the short name `os`, it sounds like operating system?
 - A: `¯\_(ツ)_/¯`
+```rs
+fn main(){
+
+}
+```

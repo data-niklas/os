@@ -20,6 +20,9 @@ pub use eval::*;
 mod search_sites;
 pub use search_sites::*;
 
+mod run_commands;
+pub use run_commands::*;
+
 #[cfg(feature = "cliphist")]
 mod cliphist;
 #[cfg(feature = "cliphist")]
@@ -31,16 +34,15 @@ pub use systemctl::*;
 mod history;
 pub use history::*;
 
-#[cfg(feature="linkding")]
+#[cfg(feature = "linkding")]
 mod linkding;
-#[cfg(feature="linkding")]
+#[cfg(feature = "linkding")]
 pub use linkding::*;
 
-#[cfg(feature="duckduckgo")]
+#[cfg(feature = "duckduckgo")]
 mod duckduckgo;
-#[cfg(feature="duckduckgo")]
+#[cfg(feature = "duckduckgo")]
 pub use duckduckgo::*;
-
 
 pub trait Source {
     fn name(&self) -> &'static str;

@@ -7,7 +7,7 @@
 
   outputs = inputs:
     with inputs;
-      flake-utils.lib.eachDefaultSystem (
+      flake-utils.lib.eachSystem (
         system: let
           pkgs = import nixpkgs {
             inherit system;
