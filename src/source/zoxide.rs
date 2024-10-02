@@ -1,8 +1,9 @@
 use crate::helpers::Helpers;
-use crate::model::{SearchItem};
+use crate::model::SearchItem;
 use crate::source::Source;
 use fuzzy_matcher::FuzzyMatcher;
 use std::process::Command;
+use std::sync::Arc;
 
 pub struct ZoxideSource {}
 
@@ -17,7 +18,7 @@ impl Source for ZoxideSource {
         "zoxide"
     }
 
-    fn init(&mut self, _config: &toml::Table, _helpers: &Helpers) {}
+    fn init(&mut self, _config: &toml::Table, _helpers: Arc<Helpers>) {}
 
     fn deinit(&mut self) {}
 

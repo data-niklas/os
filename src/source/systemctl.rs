@@ -1,9 +1,9 @@
+use std::sync::Arc;
+
 use crate::helpers::Helpers;
-use crate::model::{SearchItem};
-use crate::source::{Source};
+use crate::model::SearchItem;
+use crate::source::Source;
 use fuzzy_matcher::FuzzyMatcher;
-
-
 
 pub struct SystemctlSource {
     items: Vec<(String, String, String)>,
@@ -32,7 +32,7 @@ impl Source for SystemctlSource {
         "systemctl"
     }
 
-    fn init(&mut self, _config: &toml::Table, _helpers: &Helpers) {}
+    fn init(&mut self, _config: &toml::Table, _helpers: Arc<Helpers>) {}
 
     fn deinit(&mut self) {}
 

@@ -2,6 +2,7 @@ use super::Source;
 use crate::helpers::Helpers;
 use rayon::prelude::*;
 use scraper::{Html, Selector};
+use std::sync::Arc;
 use ureq::get;
 
 use serde::{Deserialize, Serialize};
@@ -66,7 +67,7 @@ impl Source for DuckduckgoSource {
         "duckduckgo"
     }
 
-    fn init(&mut self, config: &toml::Table, helpers: &Helpers) {
+    fn init(&mut self, config: &toml::Table, helpers: Arc<Helpers>) {
         let config: DuckduckgoConfig = config.clone().try_into().unwrap();
         let cache_duration = config.cache_duration;
 

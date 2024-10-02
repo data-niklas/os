@@ -15,6 +15,7 @@ use std::hash::{BuildHasher, Hasher};
 use std::io::Cursor;
 use std::path::PathBuf;
 use std::process::Command;
+use std::sync::Arc;
 use xdg::BaseDirectories;
 
 const fn _default_icons() -> bool {
@@ -90,7 +91,7 @@ impl Source for CliphistSource {
         "cliphist"
     }
 
-    fn init(&mut self, config: &toml::Table, helpers: &Helpers) {
+    fn init(&mut self, config: &toml::Table, helpers: Arc<Helpers>) {
         let config: CliphistConfig = config.clone().try_into().unwrap();
         let xdg = BaseDirectories::with_prefix("cliphist").unwrap();
         let db_path = xdg.place_cache_file("db").unwrap();

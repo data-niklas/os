@@ -5,6 +5,8 @@ use fuzzy_matcher::FuzzyMatcher;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::process::Command;
+use std::sync::Arc;
+use std::sync::Mutex;
 use std::time::Duration;
 use ureq::get;
 
@@ -53,39 +55,56 @@ pub struct LinkdingConfig {
     pub cache_duration: Duration,
 }
 
+struct LinkdingSourceInner {
+    bookmarks: Mutex<Vec<Bookmark>>,
+}
+
 pub struct LinkdingSource {
-    bookmarks: Vec<Bookmark>,
+    inner: Arc<LinkdingSourceInner>,
 }
 
 impl LinkdingSource {
     pub fn new() -> LinkdingSource {
-        LinkdingSource { bookmarks: vec![] }
+        LinkdingSource {
+            inner: Arc::new(LinkdingSourceInner {
+                bookmarks: Mutex::new(vec![]),
+            }),
+        }
     }
 }
-
 impl Source for LinkdingSource {
     fn name(&self) -> &'static str {
         "linkding"
     }
 
-    fn init(&mut self, config: &toml::Table, helpers: &Helpers) {
+    fn init(&mut self, config: &toml::Table, helpers: Arc<Helpers>) {
         let config: LinkdingConfig = config.clone().try_into().unwrap();
         let limit = config.limit;
         let cache_duration = config.cache_duration;
         if !helpers.cache_expired(self.name(), cache_duration) {
             let bookmarks: Bookmarks = helpers.read_cache(self.name()).unwrap();
-            self.bookmarks = bookmarks.results;
+            *self.inner.bookmarks.lock().unwrap() = bookmarks.results;
             return;
         }
-        let bookmarks_url = format!("{}/api/bookmarks/?limit={}", config.host, limit);
-        let bookmarks: Bookmarks = get(&bookmarks_url)
-            .set("Authorization", &format!("Token {}", config.api_key))
-            .call()
-            .expect("Failed to fetch bookmarks")
-            .into_json()
-            .expect("Failed to parse bookmarks");
-        helpers.write_cache(self.name(), &bookmarks);
-        self.bookmarks = bookmarks.results;
+        // run in a separate thread
+        let host = config.host.clone();
+        let api_key = config.api_key.clone();
+        let limit = config.limit.clone();
+        let helpers = helpers.clone();
+        let inner = self.inner.clone();
+        let name = self.name();
+        let helpers = helpers.clone();
+        std::thread::spawn(move || {
+            let bookmarks_url = format!("{}/api/bookmarks/?limit={}", host, limit);
+            let bookmarks: Bookmarks = get(&bookmarks_url)
+                .set("Authorization", &format!("Token {}", api_key))
+                .call()
+                .expect("Failed to fetch bookmarks")
+                .into_json()
+                .expect("Failed to parse bookmarks");
+            helpers.write_cache(name, &bookmarks);
+            *inner.bookmarks.lock().unwrap() = bookmarks.results;
+        });
     }
 
     fn deinit(&mut self) {}
@@ -106,7 +125,8 @@ impl Source for LinkdingSource {
             .filter(|word| !word.starts_with("#"))
             .collect::<Vec<&str>>()
             .join(" ");
-        let mut bookmarks: Vec<&Bookmark> = self.bookmarks.iter().collect();
+        let bookmarks = self.inner.bookmarks.lock().unwrap();
+        let mut bookmarks: Vec<&Bookmark> = bookmarks.iter().collect();
         for tag in query_tags {
             bookmarks = bookmarks
                 .into_iter()

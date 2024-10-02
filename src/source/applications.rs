@@ -8,7 +8,7 @@ use rayon::prelude::*;
 
 use image::io::Reader as ImageReader;
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use std::io::Cursor;
 use std::time::Duration;
@@ -127,13 +127,21 @@ impl ParsedDesktopEntry {
     }
 }
 
+struct ApplicationsSourceInner {
+    pub entries: Mutex<Vec<ParsedDesktopEntry>>,
+}
+
 pub struct ApplicationsSource {
-    pub entries: Vec<ParsedDesktopEntry>,
+    inner: Arc<ApplicationsSourceInner>,
 }
 
 impl ApplicationsSource {
     pub fn new() -> Self {
-        Self { entries: vec![] }
+        Self {
+            inner: Arc::new(ApplicationsSourceInner {
+                entries: Mutex::new(vec![]),
+            }),
+        }
     }
 }
 
@@ -142,51 +150,55 @@ impl Source for ApplicationsSource {
         "applications"
     }
 
-    fn init(&mut self, config: &toml::Table, helpers: &Helpers) {
+    fn init(&mut self, config: &toml::Table, helpers: Arc<Helpers>) {
         let config: ApplicationsConfig = config.clone().try_into().unwrap();
         let cache_duration = config.cache_duration;
 
         if !helpers.cache_expired(self.name(), cache_duration) {
             let entries: LoadedDesktopEntries = helpers.read_cache(self.name()).unwrap();
-            self.entries = entries
+            *self.inner.entries.lock().unwrap() = entries
                 .entries
                 .into_iter()
                 .map(|entry| ParsedDesktopEntry::from_loaded(entry, config.icons))
                 .collect();
             return;
         }
-
-        let mut cache = Cache::new().unwrap();
-        cache
-            .load_default()
-            .expect("Failed to load default icon cache");
-        let paths = default_paths();
-        let loaded_entries: Vec<LoadedDesktopEntry> = Iter::new(paths)
-            .par_bridge()
-            .filter_map(|path| {
-                let _path_src = PathSource::guess_from(&path);
-                if let Ok(bytes) = fs::read_to_string(&path) {
-                    let entry = DesktopEntry::decode(&path, &bytes);
-                    if entry.is_err() {
-                        return None;
+        let source = self.inner.clone();
+        let name = self.name();
+        // run in a separate thread to avoid blocking the main thread
+        std::thread::spawn(move || {
+            let mut cache = Cache::new().unwrap();
+            cache
+                .load_default()
+                .expect("Failed to load default icon cache");
+            let paths = default_paths();
+            let loaded_entries: Vec<LoadedDesktopEntry> = Iter::new(paths)
+                .par_bridge()
+                .filter_map(|path| {
+                    let _path_src = PathSource::guess_from(&path);
+                    if let Ok(bytes) = fs::read_to_string(&path) {
+                        let entry = DesktopEntry::decode(&path, &bytes);
+                        if entry.is_err() {
+                            return None;
+                        }
+                        let entry = entry.unwrap();
+                        LoadedDesktopEntry::from_desktop_entry(entry, &cache, config.icons)
+                    } else {
+                        None
                     }
-                    let entry = entry.unwrap();
-                    LoadedDesktopEntry::from_desktop_entry(entry, &cache, config.icons)
-                } else {
-                    None
-                }
-            })
-            .collect();
-        let loaded_entries = LoadedDesktopEntries {
-            entries: loaded_entries,
-        };
-        helpers.write_cache(self.name(), &loaded_entries);
-        let parsed_entries: Vec<ParsedDesktopEntry> = loaded_entries
-            .entries
-            .into_iter()
-            .map(|entry| ParsedDesktopEntry::from_loaded(entry, config.icons))
-            .collect();
-        self.entries = parsed_entries;
+                })
+                .collect();
+            let loaded_entries = LoadedDesktopEntries {
+                entries: loaded_entries,
+            };
+            helpers.write_cache(name, &loaded_entries);
+            let parsed_entries: Vec<ParsedDesktopEntry> = loaded_entries
+                .entries
+                .into_iter()
+                .map(|entry| ParsedDesktopEntry::from_loaded(entry, config.icons))
+                .collect();
+            *source.entries.lock().unwrap() = parsed_entries;
+        });
     }
 
     fn deinit(&mut self) {}
@@ -196,7 +208,10 @@ impl Source for ApplicationsSource {
         query: &str,
         matcher: &Box<dyn fuzzy_matcher::FuzzyMatcher + Send + Sync>,
     ) -> Vec<crate::model::SearchItem> {
-        self.entries
+        self.inner
+            .entries
+            .lock()
+            .unwrap()
             .iter()
             .map(|s| (s, matcher.fuzzy_match(&s.name, query).unwrap_or(0)))
             .filter(|(_, score)| *score > 0 || query.is_empty())

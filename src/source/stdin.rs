@@ -1,10 +1,10 @@
 use crate::helpers::Helpers;
-use crate::model::{SearchItem};
-use crate::source::{Source};
+use crate::model::SearchItem;
+use crate::source::Source;
 use atty;
 use fuzzy_matcher::FuzzyMatcher;
 use std::io::{stdin, Read};
-
+use std::sync::Arc;
 
 pub struct StdinSource {
     items: Vec<String>,
@@ -21,7 +21,7 @@ impl Source for StdinSource {
         "stdin"
     }
 
-    fn init(&mut self, _config: &toml::Table, _helpers: &Helpers) {
+    fn init(&mut self, _config: &toml::Table, _helpers: Arc<Helpers>) {
         if atty::is(atty::Stream::Stdin) {
             return;
         }

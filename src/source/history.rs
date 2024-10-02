@@ -4,8 +4,7 @@ use crate::source::Source;
 use fuzzy_matcher::FuzzyMatcher;
 use serde::{Deserialize, Serialize};
 
-
-use std::time::Duration;
+use std::{sync::Arc, time::Duration};
 
 fn _default_limit() -> u32 {
     100
@@ -63,7 +62,7 @@ impl Source for HistorySource {
         "history"
     }
 
-    fn init(&mut self, config: &toml::Table, _helpers: &Helpers) {
+    fn init(&mut self, config: &toml::Table, _helpers: Arc<Helpers>) {
         let _config: HistoryConfig = config.clone().try_into().unwrap();
         // let cache_duration = config.cache_duration;
         // if !helpers.cache_expired(self.name(), cache_duration) {

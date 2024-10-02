@@ -18,6 +18,7 @@ use crate::source::{
 
 use shlex::{self, Shlex};
 use std::process::Command;
+use std::sync::Arc;
 use std::{collections::HashMap, process::Stdio};
 
 use fuzzy_matcher::{skim::SkimMatcherV2, FuzzyMatcher};
@@ -29,7 +30,7 @@ pub struct Os {
     sources: HashMap<String, Box<dyn Source + Send + Sync>>,
     pub config: Config,
     history: History,
-    helpers: Helpers,
+    helpers: Arc<Helpers>,
 }
 
 impl Os {
@@ -37,9 +38,9 @@ impl Os {
         self.sources.par_iter_mut().for_each(|(_, source)| {
             let source_name = source.name();
             if let Some(config) = self.config.source.get(source_name) {
-                source.init(config, &self.helpers);
+                source.init(config, self.helpers.clone());
             } else {
-                source.init(&toml::Table::new(), &self.helpers);
+                source.init(&toml::Table::new(), self.helpers.clone());
             }
         });
     }
@@ -178,7 +179,7 @@ impl Os {
             matcher,
             sources,
             config,
-            helpers: Helpers::default(),
+            helpers: Arc::new(Helpers::default()),
         };
         config.init_sources();
         config

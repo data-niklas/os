@@ -3,6 +3,7 @@ use crate::helpers::Helpers;
 use crate::model::SearchItem;
 
 use std::collections::HashMap;
+use std::sync::Arc;
 
 struct RunCommand {
     command: String,
@@ -26,7 +27,7 @@ impl Source for RunCommandsSource {
         "run_commands"
     }
 
-    fn init(&mut self, config: &toml::Table, _helpers: &Helpers) {
+    fn init(&mut self, config: &toml::Table, _helpers: Arc<Helpers>) {
         let default_commands: HashMap<String, String> = config
             .get("default")
             .map_or(toml::Value::Table(toml::Table::new()), |value| {

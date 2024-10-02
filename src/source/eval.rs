@@ -1,9 +1,10 @@
+use std::sync::Arc;
+
 use crate::helpers::Helpers;
 use crate::model::{ClipboardContent, SearchItem};
 use crate::source::Source;
 use eval::Expr;
 use fuzzy_matcher::FuzzyMatcher;
-
 
 pub struct EvalSource {}
 
@@ -18,7 +19,7 @@ impl Source for EvalSource {
         "eval"
     }
 
-    fn init(&mut self, _config: &toml::Table, _helpers: &Helpers) {}
+    fn init(&mut self, _config: &toml::Table, _helpers: Arc<Helpers>) {}
 
     fn deinit(&mut self) {}
 

@@ -3,6 +3,7 @@ use crate::helpers::Helpers;
 use crate::model::SearchItem;
 
 use std::collections::HashMap;
+use std::sync::Arc;
 
 pub struct SearchSitesSource {
     pub sites: HashMap<String, String>,
@@ -21,7 +22,7 @@ impl Source for SearchSitesSource {
         "search_sites"
     }
 
-    fn init(&mut self, config: &toml::Table, _helpers: &Helpers) {
+    fn init(&mut self, config: &toml::Table, _helpers: Arc<Helpers>) {
         self.sites = config.clone().try_into().unwrap();
     }
 
