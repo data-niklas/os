@@ -2,7 +2,6 @@ use super::Source;
 use crate::helpers::Helpers;
 use rayon::prelude::*;
 use scraper::{Html, Selector};
-use std::sync::Arc;
 use ureq::get;
 
 use serde::{Deserialize, Serialize};

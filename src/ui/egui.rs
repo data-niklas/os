@@ -5,7 +5,6 @@ use crate::ui::UI;
 use crate::{model::SearchItem, os::Os};
 
 use eframe::egui;
-
 use egui::*;
 use image::EncodableLayout;
 
@@ -36,7 +35,7 @@ impl UI for EguiUI {
                 if initial_search {
                     app.search();
                 }
-                Box::new(app)
+                Ok(Box::new(app))
             }),
         );
     }
