@@ -3,6 +3,10 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     crane.url = "github:ipetkov/crane";
     flake-utils.url = "github:numtide/flake-utils";
+    rust-overlay = {
+      url = "github:oxalica/rust-overlay";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = {
@@ -10,11 +14,17 @@
     nixpkgs,
     crane,
     flake-utils,
+    rust-overlay,
     ...
   }:
     flake-utils.lib.eachDefaultSystem (system: let
-      pkgs = nixpkgs.legacyPackages.${system};
-      craneLib = crane.mkLib pkgs;
+      pkgs = import nixpkgs {
+        inherit system;
+        overlays = [(import rust-overlay)];
+      };
+      craneLib =
+        (crane.mkLib pkgs).overrideToolchain (p:
+          p.rust-bin.stable.latest.default);
     in {
       packages.default = craneLib.buildPackage {
         src = craneLib.cleanCargoSource ./.;
@@ -24,13 +34,8 @@
         buildInputs = with pkgs; [
           pkg-config
           sqlite
+          luajit
           xorg.libxcb
-          gtk4
-          gtk4-layer-shell
-          gobject-introspection
-          glib
-          graphene
-          gdk-pixbuf
           pango
 
           libGL
@@ -42,7 +47,7 @@
           xorg.libXrandr
         ];
 
-        cargoExtraArgs = "--features 'wayland duckduckgo linkding'";
+        # cargoExtraArgs = "--features 'wayland duckduckgo linkding'";
         # nativeBuildInputs = [];
       };
     });
