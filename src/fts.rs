@@ -1,7 +1,6 @@
 use mlua::prelude::*;
-use mlua::{Function, UserData, Value};
+use mlua::Value;
 use rusqlite::types::Value as DBValue;
-use std::path::Path;
 
 pub fn create_connection() -> rusqlite::Connection {
     let conn = rusqlite::Connection::open("test.db").unwrap();

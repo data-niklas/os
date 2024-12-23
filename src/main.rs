@@ -3,8 +3,7 @@ mod lua;
 mod plugin;
 
 use mlua::prelude::*;
-use mlua::{Function, UserData, Value};
-use rusqlite::types::Value as DBValue;
+use mlua::Value;
 use std::path::Path;
 
 pub struct Config {
@@ -105,11 +104,11 @@ impl OmniSearch {
         }
     }
 
-    pub fn search(&self, query: &str) -> Vec<lua::RowScore> {
+    pub fn search(&self, query: &str) -> Vec<lua::UIRowScore> {
         let conn = fts::create_connection();
         let mut results = Vec::new();
         for plugin in self.config.enabled_plugins_iter() {
-            let plugin_result = plugin.search(&self.lua, &conn, query);
+            let plugin_result = plugin.search(&self.lua, &conn, query).unwrap();
             results.extend(plugin_result);
         }
         results

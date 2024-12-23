@@ -2,7 +2,6 @@ use crate::fts::sqlite_to_lua_value;
 use mlua::prelude::*;
 use mlua::{Function, UserData, Value};
 use rusqlite::types::Value as DBValue;
-use std::path::Path;
 
 #[derive(Clone, Debug)]
 pub struct ActivePlugin {
@@ -166,10 +165,22 @@ impl Plugin {
         lua: &Lua,
         conn: &rusqlite::Connection,
         query: &str,
-    ) -> Vec<crate::lua::RowScore> {
+    ) -> LuaResult<Vec<crate::lua::UIRowScore>> {
         match self {
-            Plugin::ActivePlugin(plugin) => plugin.search(lua, query.to_string()),
-            Plugin::PassivePlugin(plugin) => plugin.search(lua, conn, query),
+            Plugin::ActivePlugin(plugin) => {
+                let scored_rows = plugin.search(lua, query.to_string());
+                scored_rows
+                    .into_iter()
+                    .map(|row| row.to_ui(&plugin.build_ui))
+                    .collect()
+            }
+            Plugin::PassivePlugin(plugin) => {
+                let scored_rows = plugin.search(lua, conn, query);
+                scored_rows
+                    .into_iter()
+                    .map(|row| row.to_ui(&plugin.build_ui))
+                    .collect()
+            }
         }
     }
 

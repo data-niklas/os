@@ -1,7 +1,5 @@
 use mlua::prelude::*;
-use mlua::{Function, UserData, Value};
-use rusqlite::types::Value as DBValue;
-use std::path::Path;
+use mlua::{UserData, Value};
 
 #[derive(Clone, Debug)]
 pub struct LuaRow(Vec<Value>);
@@ -9,6 +7,16 @@ pub struct LuaRow(Vec<Value>);
 impl LuaRow {
     pub fn new(row: Vec<Value>) -> Self {
         LuaRow(row)
+    }
+}
+
+impl IntoLua for LuaRow {
+    fn into_lua(self, lua: &Lua) -> LuaResult<Value> {
+        let table = lua.create_table()?;
+        for (i, value) in self.0.into_iter().enumerate() {
+            table.set(i + 1, value)?;
+        }
+        Ok(Value::Table(table))
     }
 }
 
@@ -41,22 +49,75 @@ impl RowScore {
     pub fn new(row: LuaRow, score: f32) -> Self {
         RowScore { row, score }
     }
+
+    pub fn to_ui(self, func: &mlua::Function) -> LuaResult<UIRowScore> {
+        let row = func.call::<UIRow>(self.row)?;
+        Ok(UIRowScore {
+            row,
+            score: self.score,
+        })
+    }
 }
 
 impl FromLua for RowScore {
     fn from_lua(value: Value, lua: &Lua) -> LuaResult<Self> {
         match value {
             Value::Table(t) => {
-                let row = t.get(1)?;
-                let score = t.get(2)?;
-                Ok(RowScore {
-                    row: row,
-                    score: score,
-                })
+                let row = t.get("row")?;
+
+                let score = t.get("score")?;
+
+                Ok(RowScore { row, score })
             }
             _ => Err(LuaError::FromLuaConversionError {
                 from: "Value",
                 to: "RowScore".to_string(),
+                message: Some("expected table".to_string()),
+            }),
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct UIRow {
+    title: String,
+    description: String,
+}
+
+impl FromLua for UIRow {
+    fn from_lua(value: Value, lua: &Lua) -> LuaResult<Self> {
+        match value {
+            Value::Table(t) => {
+                let title = t.get("title")?;
+                let description = t.get("description")?;
+                Ok(UIRow { title, description })
+            }
+            _ => Err(LuaError::FromLuaConversionError {
+                from: "Value",
+                to: "UIRow".to_string(),
+                message: Some("expected table".to_string()),
+            }),
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct UIRowScore {
+    row: UIRow,
+    score: f32,
+}
+
+impl FromLua for UIRowScore {
+    fn from_lua(value: Value, lua: &Lua) -> LuaResult<Self> {
+        match value {
+            Value::Table(t) => {
+                let row = t.get("row")?;
+                let score = t.get("score")?;
+                Ok(UIRowScore { row, score })
+            }
+            _ => Err(LuaError::FromLuaConversionError {
+                from: "Value",
+                to: "UIRowScore".to_string(),
                 message: Some("expected table".to_string()),
             }),
         }
