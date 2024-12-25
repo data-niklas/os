@@ -1,5 +1,7 @@
 mod fts;
+mod index;
 mod lua;
+mod modules;
 mod plugin;
 
 use mlua::prelude::*;
@@ -113,6 +115,22 @@ impl OmniSearch {
         }
         results
     }
+
+    pub fn index(&mut self) {
+        let conn = fts::create_connection();
+        index::index(
+            &self.lua,
+            &conn,
+            &mut self
+                .config
+                .enabled_plugins_iter_mut()
+                .filter_map(|plugin| match plugin {
+                    plugin::Plugin::PassivePlugin(plugin) => Some(plugin),
+                    _ => None,
+                }),
+        )
+        .unwrap();
+    }
 }
 
 fn main() {
@@ -121,4 +139,5 @@ fn main() {
     omni_search.setup_plugins();
     let result = omni_search.search("test");
     println!("{:?}", result);
+    omni_search.index();
 }

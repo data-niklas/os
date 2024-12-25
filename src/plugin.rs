@@ -1,4 +1,4 @@
-use crate::fts::sqlite_to_lua_value;
+use crate::modules::db::sqlite_to_lua_value;
 use mlua::prelude::*;
 use mlua::{Function, UserData, Value};
 use rusqlite::types::Value as DBValue;
@@ -7,7 +7,7 @@ use rusqlite::types::Value as DBValue;
 pub struct ActivePlugin {
     name: String,
     // First column is the primary key
-    retrieve_rows: Function,
+    query_rows: Function,
     build_ui: Function,
 }
 
@@ -18,11 +18,11 @@ impl FromLua for ActivePlugin {
         match value {
             Value::Table(t) => {
                 let name = t.get("name")?;
-                let retrieve_rows = t.get("retrieve_rows")?;
+                let query_rows = t.get("query_rows")?;
                 let build_ui = t.get("build_ui")?;
                 Ok(ActivePlugin {
                     name,
-                    retrieve_rows,
+                    query_rows,
                     build_ui,
                 })
             }
@@ -36,17 +36,17 @@ impl FromLua for ActivePlugin {
 }
 
 impl ActivePlugin {
-    pub fn new(name: String, retrieve_rows: Function, build_ui: Function) -> Self {
+    pub fn new(name: String, query_rows: Function, build_ui: Function) -> Self {
         ActivePlugin {
             name,
-            retrieve_rows,
+            query_rows,
             build_ui,
         }
     }
 
     pub fn search(&self, lua: &Lua, query: String) -> Vec<crate::lua::RowScore> {
         let rows = self
-            .retrieve_rows
+            .query_rows
             .call::<Vec<crate::lua::RowScore>>(query)
             .unwrap();
         rows
@@ -60,6 +60,7 @@ pub struct PassivePlugin {
     columns: Vec<String>,
     search_columns: Vec<String>,
     build_ui: Function,
+    refresh_rows: Function,
 }
 
 impl UserData for PassivePlugin {}
@@ -72,11 +73,13 @@ impl FromLua for PassivePlugin {
                 let columns = t.get("columns")?;
                 let search_columns = t.get("search_columns")?;
                 let build_ui = t.get("build_ui")?;
+                let refresh_rows = t.get("refresh_rows")?;
                 Ok(PassivePlugin {
                     name,
                     columns,
                     search_columns,
                     build_ui,
+                    refresh_rows,
                 })
             }
             _ => Err(LuaError::FromLuaConversionError {
@@ -94,12 +97,14 @@ impl PassivePlugin {
         columns: Vec<String>,
         search_columns: Vec<String>,
         build_ui: Function,
+        refresh_rows: Function,
     ) -> Self {
         PassivePlugin {
             name,
             columns,
             search_columns,
             build_ui,
+            refresh_rows,
         }
     }
 
@@ -111,13 +116,22 @@ impl PassivePlugin {
         &self.columns[0]
     }
 
+    pub fn refresh_rows(&self, lua: &Lua, conn: &rusqlite::Connection) -> LuaResult<()> {
+        lua.scope(|scope| {
+            let table_lease = crate::modules::db::TableLease::new(conn, &self.name);
+            let lua_table_lease = scope.create_userdata(table_lease)?;
+            self.refresh_rows.call::<()>(lua_table_lease).unwrap();
+            Ok(())
+        })
+    }
+
     fn search(
         &self,
         lua: &Lua,
         conn: &rusqlite::Connection,
         query: &str,
     ) -> Vec<crate::lua::RowScore> {
-        let mut stmt = conn.prepare(&format!("SELECT rowid, bm25({}_search) FROM {}_search WHERE {}_search MATCH ? ORDER BY bm25({}_search) DESC", self.name, self.name, self.name, self.name)).unwrap();
+        let mut stmt = conn.prepare(&format!("SELECT b.*, bm25({}_search) FROM {}_search AS a INNER JOIN {} AS b ON a.rowid = b.{} WHERE {}_search MATCH ? ORDER BY bm25({}_search) DESC", self.name, self.name, self.name, &self.columns[0], self.name, self.name)).unwrap();
         let rows = stmt
             .query_map(&[&query], |row| {
                 let mut fields: Vec<DBValue> = Vec::new();

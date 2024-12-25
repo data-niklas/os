@@ -7,18 +7,6 @@ pub fn create_connection() -> rusqlite::Connection {
     conn
 }
 
-pub fn sqlite_to_lua_value(lua: &Lua, value: &DBValue) -> Value {
-    match value {
-        DBValue::Null => Value::Nil,
-        DBValue::Integer(i) => Value::Integer(*i),
-        DBValue::Real(f) => Value::Number(*f),
-        DBValue::Text(s) => Value::String(lua.create_string(s).unwrap()),
-        DBValue::Blob(b) => crate::lua::LuaBuffer { buffer: b.to_vec() }
-            .into_lua(lua)
-            .unwrap(),
-    }
-}
-
 // Creates the table in which the plugin stores its data
 pub fn create_content_table_for_fts(conn: &rusqlite::Connection, name: &str, columns: &[String]) {
     let mut create_table_query = format!("CREATE TABLE IF NOT EXISTS {} (", name);
@@ -61,7 +49,7 @@ pub fn create_after_insert_trigger(
         "CREATE TRIGGER IF NOT EXISTS {}_ai AFTER INSERT ON {} BEGIN ",
         name, name
     );
-    create_ai_trigger_statement.push_str(&format!("INSERT INTO {}_search({}", name, &columns[0]));
+    create_ai_trigger_statement.push_str(&format!("INSERT INTO {}_search(rowid", name));
     for column in search_columns {
         create_ai_trigger_statement.push_str(&format!(", {}", column));
     }
@@ -87,8 +75,8 @@ pub fn create_after_delete_trigger(
         name, name
     );
     create_ad_trigger_statement.push_str(&format!(
-        "INSERT INTO {}_search({}_search, {}",
-        name, name, &columns[0]
+        "INSERT INTO {}_search({}_search, rowid",
+        name, name
     ));
     for column in search_columns {
         create_ad_trigger_statement.push_str(&format!(", {}", column));
@@ -115,8 +103,8 @@ pub fn create_after_update_trigger(
         name, name
     );
     create_au_trigger_statement.push_str(&format!(
-        "INSERT INTO {}_search({}_search, {}",
-        name, name, &columns[0]
+        "INSERT INTO {}_search({}_search, rowid",
+        name, name
     ));
     for column in search_columns {
         create_au_trigger_statement.push_str(&format!(", {}", column));
