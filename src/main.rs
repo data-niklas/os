@@ -5,12 +5,14 @@ mod modules;
 mod plugin;
 
 use mlua::prelude::*;
-use mlua::Value;
+use mlua::{Function, Value};
 use std::path::Path;
 
 pub struct Config {
     pub plugins: Vec<plugin::Plugin>,
     pub enabled_plugins: Vec<usize>,
+    pub item_map: Option<Function>, // receives the plugin name, the item score and content and may
+                                    // return a different score and pinned state
 }
 
 impl Config {
@@ -18,6 +20,7 @@ impl Config {
         Config {
             plugins: Vec::new(),
             enabled_plugins: Vec::new(),
+            item_map: None,
         }
     }
 
@@ -60,9 +63,13 @@ impl FromLua for Config {
                             .unwrap()
                     })
                     .collect();
+
+                let item_map: Option<Function> = t.get("item_map").unwrap_or(None);
+
                 Ok(Config {
                     plugins,
                     enabled_plugins,
+                    item_map,
                 })
             }
             _ => Err(LuaError::FromLuaConversionError {
@@ -106,13 +113,39 @@ impl OmniSearch {
         }
     }
 
-    pub fn search(&self, query: &str) -> Vec<lua::UIRowScore> {
+    pub fn search_unordered(&self, query: &str) -> Vec<lua::SearchResult> {
         let conn = fts::create_connection();
         let mut results = Vec::new();
         for plugin in self.config.enabled_plugins_iter() {
-            let plugin_result = plugin.search(&self.lua, &conn, query).unwrap();
+            let mut plugin_result = plugin.search(&self.lua, &conn, query).unwrap();
+
+            if let Some(item_map) = &self.config.item_map {
+                let plugin_name = plugin.name();
+                plugin_result = plugin_result
+                    .into_iter()
+                    .map(|row| {
+                        let result = item_map.call::<Value>((plugin_name, row)).unwrap();
+                        lua::SearchResult::from_lua(result, &self.lua).unwrap()
+                    })
+                    .collect();
+            }
             results.extend(plugin_result);
         }
+        results
+    }
+
+    pub fn search(&self, query: &str) -> Vec<lua::SearchResult> {
+        let mut results = self.search_unordered(query);
+        results.sort_by(|a, b| {
+            // first sort by field pinned (bool)
+            // secondarily sort by field score (f32)
+            // reverse sort order from pinned and highest score to unpinned and lowest score
+            if a.pinned == b.pinned {
+                b.score.partial_cmp(&a.score).unwrap()
+            } else {
+                a.pinned.cmp(&b.pinned)
+            }
+        });
         results
     }
 

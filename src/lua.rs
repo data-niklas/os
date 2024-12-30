@@ -1,5 +1,5 @@
 use mlua::prelude::*;
-use mlua::{UserData, Value};
+use mlua::{Function, UserData, Value};
 
 #[derive(Clone, Debug)]
 pub struct LuaRow(Vec<Value>);
@@ -40,87 +40,112 @@ impl FromLua for LuaRow {
 }
 
 #[derive(Clone, Debug)]
-pub struct RowScore {
+pub struct DBSearchResult {
     row: LuaRow,
     score: f32,
 }
 
-impl RowScore {
+impl DBSearchResult {
     pub fn new(row: LuaRow, score: f32) -> Self {
-        RowScore { row, score }
+        DBSearchResult { row, score }
     }
 
-    pub fn to_ui(self, func: &mlua::Function) -> LuaResult<UIRowScore> {
-        let row = func.call::<UIRow>(self.row)?;
-        Ok(UIRowScore {
-            row,
-            score: self.score,
-        })
+    pub fn to_search_result(self, map_fn: &Function) -> LuaResult<SearchResult> {
+        let row = self.row;
+        let score = self.score;
+        let result = map_fn.call::<SearchResult>((row, score))?;
+        Ok(result)
     }
 }
 
-impl FromLua for RowScore {
+impl FromLua for DBSearchResult {
     fn from_lua(value: Value, lua: &Lua) -> LuaResult<Self> {
         match value {
             Value::Table(t) => {
                 let row = t.get("row")?;
-
                 let score = t.get("score")?;
-
-                Ok(RowScore { row, score })
+                Ok(DBSearchResult { row, score })
             }
             _ => Err(LuaError::FromLuaConversionError {
                 from: "Value",
-                to: "RowScore".to_string(),
+                to: "DBSearchResult".to_string(),
                 message: Some("expected table".to_string()),
             }),
         }
     }
 }
 
-#[derive(Clone, Debug)]
-pub struct UIRow {
-    title: String,
-    description: String,
+impl IntoLua for DBSearchResult {
+    fn into_lua(self, lua: &Lua) -> LuaResult<Value> {
+        let table = lua.create_table()?;
+        table.set("row", self.row)?;
+        table.set("score", self.score)?;
+        Ok(Value::Table(table))
+    }
 }
 
-impl FromLua for UIRow {
+#[derive(Clone, Debug)]
+pub struct SearchResult {
+    pub title: String,
+    pub description: String,
+    pub action: Function,
+    pub score: f32,
+    pub pinned: bool,
+}
+
+impl SearchResult {
+    pub fn new(
+        title: String,
+        description: String,
+        action: Function,
+        score: f32,
+        pinned: bool,
+    ) -> Self {
+        SearchResult {
+            title,
+            description,
+            action,
+            score,
+            pinned,
+        }
+    }
+}
+
+impl FromLua for SearchResult {
     fn from_lua(value: Value, lua: &Lua) -> LuaResult<Self> {
         match value {
             Value::Table(t) => {
                 let title = t.get("title")?;
                 let description = t.get("description")?;
-                Ok(UIRow { title, description })
+                let action = t.get("action")?;
+                let score = t.get("score")?;
+                let pinned = t.get("pinned").unwrap_or(false);
+                Ok(SearchResult {
+                    title,
+                    description,
+                    action,
+                    score,
+                    pinned,
+                })
             }
             _ => Err(LuaError::FromLuaConversionError {
                 from: "Value",
-                to: "UIRow".to_string(),
+                to: "SearchResult".to_string(),
                 message: Some("expected table".to_string()),
             }),
         }
     }
 }
 
-#[derive(Clone, Debug)]
-pub struct UIRowScore {
-    row: UIRow,
-    score: f32,
-}
-
-impl FromLua for UIRowScore {
-    fn from_lua(value: Value, lua: &Lua) -> LuaResult<Self> {
-        match value {
-            Value::Table(t) => {
-                let row = t.get("row")?;
-                let score = t.get("score")?;
-                Ok(UIRowScore { row, score })
-            }
-            _ => Err(LuaError::FromLuaConversionError {
-                from: "Value",
-                to: "UIRowScore".to_string(),
-                message: Some("expected table".to_string()),
-            }),
-        }
+impl IntoLua for SearchResult {
+    fn into_lua(self, lua: &Lua) -> LuaResult<Value> {
+        let table = lua.create_table()?;
+        table.set("title", self.title)?;
+        table.set("description", self.description)?;
+        table.set("action", self.action)?;
+        table.set("score", self.score)?;
+        table.set("pinned", self.pinned)?;
+        Ok(Value::Table(table))
     }
 }
 
